@@ -7,14 +7,17 @@
     {
       "route": "/assets/*",
       "headers": {
-        "Cache-Control": "public, max-age=31536000, immutable"
+        "Cache-Control": "public, max-age=31536000, immutable",
+        "Access-Control-Allow-Origin": "*",
+        "Cross-Origin-Resource-Policy": "cross-origin"
       }
     }
   ],
   "globalHeaders": {
     "X-Content-Type-Options": "nosniff",
-    "X-Frame-Options": "DENY",
-    "X-XSS-Protection": "1; mode=block"
+    "X-Frame-Options": "SAMEORIGIN",
+    "Referrer-Policy": "no-referrer-when-downgrade",
+    "Permissions-Policy": "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
   },
   "mimeTypes": {
     ".json": "application/json",
