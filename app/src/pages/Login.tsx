@@ -29,7 +29,7 @@ export default function Login() {
                 </p>
 
                 <div className="login-footer">
-                    <a href="/" className="btn-back">← Volver al inicio</a>
+                    <a href="https://agribusiness.com.py" className="btn-back">← Volver al inicio</a>
                 </div>
             </div>
         </div>

@@ -14,8 +14,21 @@ export default function Dashboard() {
     const { instance, accounts } = useMsal();
     const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
     const [_tenants, setTenants] = useState<Tenant[]>([]);
+    const [isFirstLogin, setIsFirstLogin] = useState(false);
 
     useEffect(() => {
+        // Detectar si es el primer login del usuario
+        const hasLoggedInBefore = localStorage.getItem('hasLoggedInBefore');
+        if (!hasLoggedInBefore) {
+            setIsFirstLogin(true);
+            localStorage.setItem('hasLoggedInBefore', 'true');
+
+            // Ocultar mensaje de bienvenida después de 10 segundos
+            setTimeout(() => {
+                setIsFirstLogin(false);
+            }, 10000);
+        }
+
         // TODO: Fetch user's tenants from API
         // Por ahora mock data
         setTenants([
@@ -131,9 +144,40 @@ export default function Dashboard() {
 
                 {/* Content */}
                 <div className="dashboard-content">
+                    {/* First Login Welcome */}
+                    {isFirstLogin && (
+                        <div className="first-login-welcome">
+                            <div className="welcome-icon">🎉</div>
+                            <h2>¡Bienvenido por primera vez, {account?.name?.split(' ')[0] || 'Usuario'}!</h2>
+                            <p>Gracias por unirte a Agribusiness ERP. Estamos emocionados de ayudarte a gestionar tu establecimiento agropecuario.</p>
+                            <div className="welcome-features">
+                                <div className="feature-item">
+                                    <span className="feature-icon">✅</span>
+                                    <span>Acceso autenticado con Microsoft</span>
+                                </div>
+                                <div className="feature-item">
+                                    <span className="feature-icon">✅</span>
+                                    <span>Sistema multi-tenant configurado</span>
+                                </div>
+                                <div className="feature-item">
+                                    <span className="feature-icon">✅</span>
+                                    <span>Dashboard personalizado listo</span>
+                                </div>
+                            </div>
+                            <p className="welcome-next-steps">Los módulos de gestión estarán disponibles próximamente.</p>
+                        </div>
+                    )}
+
                     <div className="welcome-section">
-                        <h2>Bienvenido al ERP Agribusiness</h2>
+                        <h2>Bienvenido{account?.name ? `, ${account.name.split(' ')[0]}` : ''}</h2>
                         <p>Sistema de gestión empresarial para el sector agropecuario</p>
+                        {selectedTenant && (
+                            <div className="current-tenant-badge">
+                                <span className="badge-icon">🏢</span>
+                                <span>{selectedTenant.nombre}</span>
+                                <span className="badge-role">{selectedTenant.role}</span>
+                            </div>
+                        )}
                     </div>
 
                     {/* Quick Stats */}
