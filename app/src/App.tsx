@@ -53,11 +53,8 @@ function App() {
             <BrowserRouter>
                 <Routes>
                     {/* Public Routes */}
-                    <Route path="/app/login" element={
-                        <UnauthenticatedTemplate>
-                            <Login />
-                        </UnauthenticatedTemplate>
-                    } />
+                    <Route path="/app/login" element={<Login />} />
+                    <Route path="/login" element={<Login />} />
 
                     {/* Protected Routes */}
                     <Route path="/app/dashboard" element={
@@ -65,56 +62,72 @@ function App() {
                             <Dashboard />
                         </AuthenticatedTemplate>
                     } />
+                    <Route path="/dashboard" element={
+                        <AuthenticatedTemplate>
+                            <Dashboard />
+                        </AuthenticatedTemplate>
+                    } />
 
                     {/* Inventario Route - Dev mode allows unauthenticated access */}
+                    <Route path="/inventario" element={<Inventario />} />
                     <Route path="/app/inventario" element={<Inventario />} />
 
                     {/* Contabilidad Routes */}
-                    <Route path="/app/contabilidad" element={
+                    <Route path="/contabilidad" element={
                         <AuthenticatedTemplate>
                             <DashboardContable />
                         </AuthenticatedTemplate>
                     } />
-                    <Route path="/app/contabilidad/plan-cuentas" element={
+                    <Route path="/contabilidad/plan-cuentas" element={
                         <AuthenticatedTemplate>
                             <PlanCuentas />
                         </AuthenticatedTemplate>
                     } />
-                    <Route path="/app/contabilidad/asientos" element={
+                    <Route path="/contabilidad/asientos" element={
                         <AuthenticatedTemplate>
                             <AsientosContables />
                         </AuthenticatedTemplate>
                     } />
-                    <Route path="/app/contabilidad/balance" element={
+                    <Route path="/contabilidad/balance" element={
                         <AuthenticatedTemplate>
                             <BalanceGeneral />
                         </AuthenticatedTemplate>
                     } />
-                    <Route path="/app/contabilidad/estado-resultados" element={
+                    <Route path="/contabilidad/estado-resultados" element={
                         <AuthenticatedTemplate>
                             <EstadoResultados />
                         </AuthenticatedTemplate>
                     } />
-                    <Route path="/app/contabilidad/mayor" element={
+                    <Route path="/contabilidad/mayor" element={
                         <AuthenticatedTemplate>
                             <LibroMayor />
                         </AuthenticatedTemplate>
                     } />
 
-                    {/* Default route */}
+                    {/* Default routes */}
                     <Route path="/app" element={
                         <>
                             <AuthenticatedTemplate>
-                                <Navigate to="/app/dashboard" replace />
+                                <Navigate to="/dashboard" replace />
                             </AuthenticatedTemplate>
                             <UnauthenticatedTemplate>
-                                <Navigate to="/app/login" replace />
+                                <Navigate to="/login" replace />
+                            </UnauthenticatedTemplate>
+                        </>
+                    } />
+                    <Route path="/" element={
+                        <>
+                            <AuthenticatedTemplate>
+                                <Navigate to="/dashboard" replace />
+                            </AuthenticatedTemplate>
+                            <UnauthenticatedTemplate>
+                                <Navigate to="/login" replace />
                             </UnauthenticatedTemplate>
                         </>
                     } />
 
                     {/* Redirect unknown routes */}
-                    <Route path="*" element={<Navigate to="/app" replace />} />
+                    <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
             </BrowserRouter>
         </MsalProvider>
