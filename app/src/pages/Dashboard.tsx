@@ -75,35 +75,39 @@ export default function Dashboard() {
 
                 {/* Navigation */}
                 <nav className="sidebar-nav">
-                    <Link to="/app/dashboard" className="nav-item active">
+                    <Link to="/dashboard" className="nav-item active">
                         <span className="nav-icon">📊</span>
                         Dashboard
                     </Link>
-                    <Link to="/app/inventario" className="nav-item">
+                    <Link to="/contabilidad" className="nav-item">
+                        <span className="nav-icon">💼</span>
+                        Contabilidad
+                    </Link>
+                    <Link to="/inventario" className="nav-item">
                         <span className="nav-icon">📦</span>
                         Inventario
                     </Link>
-                    <Link to="/app/ventas" className="nav-item">
+                    <Link to="/ventas" className="nav-item">
                         <span className="nav-icon">💰</span>
                         Ventas
                     </Link>
-                    <Link to="/app/compras" className="nav-item">
+                    <Link to="/compras" className="nav-item">
                         <span className="nav-icon">🛒</span>
                         Compras
                     </Link>
-                    <Link to="/app/clientes" className="nav-item">
+                    <Link to="/clientes" className="nav-item">
                         <span className="nav-icon">👥</span>
                         Clientes
                     </Link>
-                    <Link to="/app/proveedores" className="nav-item">
+                    <Link to="/proveedores" className="nav-item">
                         <span className="nav-icon">🏭</span>
                         Proveedores
                     </Link>
-                    <Link to="/app/reportes" className="nav-item">
+                    <Link to="/reportes" className="nav-item">
                         <span className="nav-icon">📈</span>
                         Reportes
                     </Link>
-                    <Link to="/app/benchmarking" className="nav-item">
+                    <Link to="/benchmarking" className="nav-item">
                         <span className="nav-icon">📉</span>
                         Benchmarking
                     </Link>

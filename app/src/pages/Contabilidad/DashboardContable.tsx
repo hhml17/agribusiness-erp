@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import contabilidadService from '../../services/contabilidad.service';
 import type { BalanceGeneral, EstadoResultados, AsientoContable } from '../../types/contabilidad';
+import '../../styles/contabilidad.css';
 
 
 const DashboardContable = () => {
@@ -20,20 +21,106 @@ const DashboardContable = () => {
       setLoading(true);
       setError(null);
 
-      // Cargar datos en paralelo
-      const [balanceData, estadoData, asientosData] = await Promise.all([
-        contabilidadService.reportes.getBalance(),
-        contabilidadService.reportes.getEstadoResultados(),
-        contabilidadService.asientos.getAll({ page: 1, limit: 5 }),
-      ]);
+      // TODO: Replace with real API calls when backend is ready
+      // Datos de prueba (mock data)
+      setTimeout(() => {
+        const mockBalance: BalanceGeneral = {
+          fecha: new Date().toISOString(),
+          activos: {
+            total: 150000000,
+            cuentas: [
+              { id: '1', codigo: '1.1.1', nombre: 'Caja', saldo: 5000000, tipo: 'ACTIVO' },
+              { id: '2', codigo: '1.1.2', nombre: 'Banco Itaú', saldo: 25000000, tipo: 'ACTIVO' },
+              { id: '3', codigo: '1.2.1', nombre: 'Clientes', saldo: 40000000, tipo: 'ACTIVO' },
+              { id: '4', codigo: '1.3.1', nombre: 'Inventario Ganadero', saldo: 80000000, tipo: 'ACTIVO' },
+            ]
+          },
+          pasivos: {
+            total: 50000000,
+            cuentas: [
+              { id: '5', codigo: '2.1.1', nombre: 'Proveedores', saldo: 30000000, tipo: 'PASIVO' },
+              { id: '6', codigo: '2.2.1', nombre: 'Préstamo Bancario', saldo: 20000000, tipo: 'PASIVO' },
+            ]
+          },
+          patrimonio: {
+            total: 100000000,
+            resultadoEjercicio: 15000000,
+            cuentas: [
+              { id: '7', codigo: '3.1.1', nombre: 'Capital Social', saldo: 85000000, tipo: 'PATRIMONIO' },
+            ]
+          },
+          totales: {
+            activos: 150000000,
+            pasivosYPatrimonio: 150000000
+          }
+        };
 
-      setBalance(balanceData);
-      setEstadoResultados(estadoData);
-      setUltimosAsientos(asientosData.asientos);
+        const mockEstado: EstadoResultados = {
+          periodo: {
+            desde: new Date(new Date().getFullYear(), 0, 1).toISOString(),
+            hasta: new Date().toISOString()
+          },
+          ingresos: {
+            total: 80000000,
+            cuentas: [
+              { id: '8', codigo: '4.1.1', nombre: 'Venta de Ganado', saldo: 60000000, tipo: 'INGRESO' },
+              { id: '9', codigo: '4.1.2', nombre: 'Venta de Productos Agrícolas', saldo: 20000000, tipo: 'INGRESO' },
+            ]
+          },
+          gastos: {
+            total: 65000000,
+            cuentas: [
+              { id: '10', codigo: '5.1.1', nombre: 'Costos Operativos', saldo: 40000000, tipo: 'GASTO' },
+              { id: '11', codigo: '5.1.2', nombre: 'Gastos Administrativos', saldo: 15000000, tipo: 'GASTO' },
+              { id: '12', codigo: '5.1.3', nombre: 'Gastos Financieros', saldo: 10000000, tipo: 'GASTO' },
+            ]
+          },
+          resultado: {
+            utilidadNeta: 15000000,
+            tipo: 'UTILIDAD'
+          }
+        };
+
+        const mockAsientos: AsientoContable[] = [
+          {
+            id: '1',
+            numero: 1,
+            fecha: new Date().toISOString(),
+            descripcion: 'Venta de ganado - Lote 001',
+            tipo: 'OPERACION',
+            estado: 'CONFIRMADO',
+            totalDebe: 15000000,
+            totalHaber: 15000000,
+            lineas: [],
+            tenantId: '',
+            creadoPor: '',
+            fechaCreacion: new Date().toISOString()
+          },
+          {
+            id: '2',
+            numero: 2,
+            fecha: new Date().toISOString(),
+            descripcion: 'Pago a proveedores',
+            tipo: 'OPERACION',
+            estado: 'CONFIRMADO',
+            totalDebe: 5000000,
+            totalHaber: 5000000,
+            lineas: [],
+            tenantId: '',
+            creadoPor: '',
+            fechaCreacion: new Date().toISOString()
+          },
+        ];
+
+        setBalance(mockBalance);
+        setEstadoResultados(mockEstado);
+        setUltimosAsientos(mockAsientos);
+        setLoading(false);
+      }, 500);
+
     } catch (err: any) {
       setError(err.response?.data?.error || 'Error al cargar el dashboard');
       console.error('Error loading dashboard:', err);
-    } finally {
       setLoading(false);
     }
   };
@@ -77,25 +164,25 @@ const DashboardContable = () => {
   }
 
   return (
-    <div className="dashboard-container">
-      <div className="dashboard-header">
-        <h1>Dashboard Contable</h1>
-        <div className="dashboard-actions">
-          <Link to="/contabilidad/asientos/nuevo" className="btn-primary">
+    <div className="page-container">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Dashboard Contable</h1>
+          <p className="page-subtitle">Resumen de tu situación financiera</p>
+        </div>
+        <div className="page-actions">
+          <Link to="/contabilidad/asientos/nuevo" className="btn btn-primary">
             + Nuevo Asiento
           </Link>
         </div>
       </div>
 
       {/* Métricas principales */}
-      <div className="metrics-grid">
+      <div className="grid grid-auto">
         <div className="metric-card">
           <div className="metric-label">Total Activos</div>
           <div className="metric-value positive">
             {balance ? formatCurrency(balance.totales.activos) : '-'}
-          </div>
-          <div className="metric-footer">
-            <Link to="/contabilidad/balance">Ver Balance General →</Link>
           </div>
         </div>
 
@@ -104,9 +191,6 @@ const DashboardContable = () => {
           <div className="metric-value">
             {balance ? formatCurrency(balance.pasivos.total) : '-'}
           </div>
-          <div className="metric-footer">
-            <Link to="/contabilidad/balance">Ver detalles →</Link>
-          </div>
         </div>
 
         <div className="metric-card">
@@ -114,24 +198,12 @@ const DashboardContable = () => {
           <div className="metric-value">
             {balance ? formatCurrency(balance.patrimonio.total) : '-'}
           </div>
-          <div className="metric-footer">
-            <span className="text-muted">
-              Incluye resultado: {balance ? formatCurrency(balance.patrimonio.resultadoEjercicio) : '-'}
-            </span>
-          </div>
         </div>
 
         <div className="metric-card">
           <div className="metric-label">Resultado del Ejercicio</div>
           <div className={`metric-value ${estadoResultados && estadoResultados.resultado.utilidadNeta >= 0 ? 'positive' : 'negative'}`}>
             {estadoResultados ? formatCurrency(estadoResultados.resultado.utilidadNeta) : '-'}
-          </div>
-          <div className="metric-footer">
-            {estadoResultados && (
-              <span className={estadoResultados.resultado.tipo === 'UTILIDAD' ? 'text-success' : 'text-danger'}>
-                {estadoResultados.resultado.tipo}
-              </span>
-            )}
           </div>
         </div>
       </div>
