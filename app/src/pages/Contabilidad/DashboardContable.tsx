@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import contabilidadService from '../../services/contabilidad.service';
 import type { BalanceGeneral, EstadoResultados, AsientoContable } from '../../types/contabilidad';
 import '../../styles/contabilidad.css';
 
@@ -29,29 +28,31 @@ const DashboardContable = () => {
           activos: {
             total: 150000000,
             cuentas: [
-              { id: '1', codigo: '1.1.1', nombre: 'Caja', saldo: 5000000, tipo: 'ACTIVO' },
-              { id: '2', codigo: '1.1.2', nombre: 'Banco Itaú', saldo: 25000000, tipo: 'ACTIVO' },
-              { id: '3', codigo: '1.2.1', nombre: 'Clientes', saldo: 40000000, tipo: 'ACTIVO' },
-              { id: '4', codigo: '1.3.1', nombre: 'Inventario Ganadero', saldo: 80000000, tipo: 'ACTIVO' },
+              { id: '1', codigo: '1.1.1', nombre: 'Caja', saldo: 5000000, tipo: 'ACTIVO', naturaleza: 'DEUDORA', nivel: 3, debe: 5000000, haber: 0 },
+              { id: '2', codigo: '1.1.2', nombre: 'Banco Itaú', saldo: 25000000, tipo: 'ACTIVO', naturaleza: 'DEUDORA', nivel: 3, debe: 25000000, haber: 0 },
+              { id: '3', codigo: '1.2.1', nombre: 'Clientes', saldo: 40000000, tipo: 'ACTIVO', naturaleza: 'DEUDORA', nivel: 3, debe: 40000000, haber: 0 },
+              { id: '4', codigo: '1.3.1', nombre: 'Inventario Ganadero', saldo: 80000000, tipo: 'ACTIVO', naturaleza: 'DEUDORA', nivel: 3, debe: 80000000, haber: 0 },
             ]
           },
           pasivos: {
             total: 50000000,
             cuentas: [
-              { id: '5', codigo: '2.1.1', nombre: 'Proveedores', saldo: 30000000, tipo: 'PASIVO' },
-              { id: '6', codigo: '2.2.1', nombre: 'Préstamo Bancario', saldo: 20000000, tipo: 'PASIVO' },
+              { id: '5', codigo: '2.1.1', nombre: 'Proveedores', saldo: 30000000, tipo: 'PASIVO', naturaleza: 'ACREEDORA', nivel: 3, debe: 0, haber: 30000000 },
+              { id: '6', codigo: '2.2.1', nombre: 'Préstamo Bancario', saldo: 20000000, tipo: 'PASIVO', naturaleza: 'ACREEDORA', nivel: 3, debe: 0, haber: 20000000 },
             ]
           },
           patrimonio: {
             total: 100000000,
             resultadoEjercicio: 15000000,
             cuentas: [
-              { id: '7', codigo: '3.1.1', nombre: 'Capital Social', saldo: 85000000, tipo: 'PATRIMONIO' },
+              { id: '7', codigo: '3.1.1', nombre: 'Capital Social', saldo: 85000000, tipo: 'PATRIMONIO', naturaleza: 'ACREEDORA', nivel: 3, debe: 0, haber: 85000000 },
             ]
           },
           totales: {
             activos: 150000000,
-            pasivosYPatrimonio: 150000000
+            pasivosYPatrimonio: 150000000,
+            diferencia: 0,
+            balanceado: true
           }
         };
 
@@ -63,16 +64,16 @@ const DashboardContable = () => {
           ingresos: {
             total: 80000000,
             cuentas: [
-              { id: '8', codigo: '4.1.1', nombre: 'Venta de Ganado', saldo: 60000000, tipo: 'INGRESO' },
-              { id: '9', codigo: '4.1.2', nombre: 'Venta de Productos Agrícolas', saldo: 20000000, tipo: 'INGRESO' },
+              { id: '8', codigo: '4.1.1', nombre: 'Venta de Ganado', saldo: 60000000, tipo: 'INGRESO', naturaleza: 'ACREEDORA', nivel: 3, debe: 0, haber: 60000000 },
+              { id: '9', codigo: '4.1.2', nombre: 'Venta de Productos Agrícolas', saldo: 20000000, tipo: 'INGRESO', naturaleza: 'ACREEDORA', nivel: 3, debe: 0, haber: 20000000 },
             ]
           },
           gastos: {
             total: 65000000,
             cuentas: [
-              { id: '10', codigo: '5.1.1', nombre: 'Costos Operativos', saldo: 40000000, tipo: 'GASTO' },
-              { id: '11', codigo: '5.1.2', nombre: 'Gastos Administrativos', saldo: 15000000, tipo: 'GASTO' },
-              { id: '12', codigo: '5.1.3', nombre: 'Gastos Financieros', saldo: 10000000, tipo: 'GASTO' },
+              { id: '10', codigo: '5.1.1', nombre: 'Costos Operativos', saldo: 40000000, tipo: 'GASTO', naturaleza: 'DEUDORA', nivel: 3, debe: 40000000, haber: 0 },
+              { id: '11', codigo: '5.1.2', nombre: 'Gastos Administrativos', saldo: 15000000, tipo: 'GASTO', naturaleza: 'DEUDORA', nivel: 3, debe: 15000000, haber: 0 },
+              { id: '12', codigo: '5.1.3', nombre: 'Gastos Financieros', saldo: 10000000, tipo: 'GASTO', naturaleza: 'DEUDORA', nivel: 3, debe: 10000000, haber: 0 },
             ]
           },
           resultado: {
@@ -84,31 +85,31 @@ const DashboardContable = () => {
         const mockAsientos: AsientoContable[] = [
           {
             id: '1',
+            tenantId: 'demo-tenant',
             numero: 1,
             fecha: new Date().toISOString(),
             descripcion: 'Venta de ganado - Lote 001',
-            tipo: 'OPERACION',
-            estado: 'CONFIRMADO',
+            tipo: 'DIARIO',
+            estado: 'CONTABILIZADO',
             totalDebe: 15000000,
             totalHaber: 15000000,
             lineas: [],
-            tenantId: '',
-            creadoPor: '',
-            fechaCreacion: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
           },
           {
             id: '2',
+            tenantId: 'demo-tenant',
             numero: 2,
             fecha: new Date().toISOString(),
             descripcion: 'Pago a proveedores',
-            tipo: 'OPERACION',
-            estado: 'CONFIRMADO',
+            tipo: 'DIARIO',
+            estado: 'CONTABILIZADO',
             totalDebe: 5000000,
             totalHaber: 5000000,
             lineas: [],
-            tenantId: '',
-            creadoPor: '',
-            fechaCreacion: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
           },
         ];
 
