@@ -93,15 +93,7 @@ export const getOrdenPagoById = async (req: Request, res: Response) => {
         cuentaBancaria: true,
         retenciones: true,
         movimientos: true,
-        asientoContable: {
-          include: {
-            detalles: {
-              include: {
-                cuenta: true,
-              },
-            },
-          },
-        },
+        asientoContable: true,
       },
     });
 
@@ -509,9 +501,8 @@ export const marcarComoPagada = async (req: Request, res: Response) => {
     }
 
     // Crear movimiento bancario si hay cuenta asociada
-    let movimiento = null;
     if (orden.cuentaBancariaId) {
-      movimiento = await prisma.movimientoBancario.create({
+      const movimiento = await prisma.movimientoBancario.create({
         data: {
           tenantId,
           cuentaBancariaId: orden.cuentaBancariaId,
