@@ -20,8 +20,7 @@ export default defineConfig({
         manualChunks: {
           // Split vendor libraries into separate chunks
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'msal-vendor': ['@azure/msal-browser', '@azure/msal-react'],
-          'ui-vendor': ['recharts']
+          'msal-vendor': ['@azure/msal-browser', '@azure/msal-react']
         }
       }
     },
