@@ -1,0 +1,404 @@
+// Prisma Schema - Agribusiness ERP
+// Multi-tenant architecture with row-level security
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"  // Using Azure SQL Server
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// CORE MODELS - Multi-Tenant
+// ==========================================
+
+model Tenant {
+  id          String   @id @default(uuid())
+  nombre      String
+  ruc         String   @unique
+  direccion   String?
+  telefono    String?
+  email       String?
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations - Commercial
+  usuarios    Usuario[]
+  productos   Producto[]
+  clientes    Cliente[]
+  proveedores Proveedor[]
+  ventas      Venta[]
+  compras     Compra[]
+
+  // Relations - Accounting
+  planCuentas       PlanCuentas[]
+  centrosCosto      CentroCosto[]
+  asientos          AsientoContable[]
+
+  @@map("tenants")
+}
+
+model Usuario {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  nombre        String
+  apellido      String?
+  azureAdId     String?  @unique  // Azure AD Object ID
+  activo        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Multi-tenant relations
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  role          String   @default("USER") // ADMIN | USER | VIEWER
+
+  @@map("usuarios")
+  @@index([tenantId])
+  @@index([email])
+}
+
+// Note: SQLite doesn't support enums, using String with validation
+// enum Role {
+//   ADMIN
+//   USER
+//   VIEWER
+// }
+
+// ==========================================
+// INVENTARIO
+// ==========================================
+
+model Producto {
+  id             String   @id @default(uuid())
+  codigo         String
+  nombre         String
+  descripcion    String?
+  categoria      String?
+  unidadMedida   String   // kg, litros, unidades, etc.
+  precioCompra   Float
+  precioVenta    Float
+  stock          Float    @default(0)
+  stockMinimo    Float?
+  activo         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Multi-tenant
+  tenantId       String
+  tenant         Tenant   @relation(fields: [tenantId], references: [id])
+
+  // Relations
+  ventaItems     VentaItem[]
+  compraItems    CompraItem[]
+
+  @@map("productos")
+  @@unique([tenantId, codigo])
+  @@index([tenantId])
+  @@index([categoria])
+}
+
+// ==========================================
+// CLIENTES
+// ==========================================
+
+model Cliente {
+  id           String   @id @default(uuid())
+  codigo       String
+  nombre       String
+  ruc          String?
+  direccion    String?
+  telefono     String?
+  email        String?
+  activo       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Multi-tenant
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+
+  // Relations
+  ventas       Venta[]
+
+  @@map("clientes")
+  @@unique([tenantId, codigo])
+  @@index([tenantId])
+}
+
+// ==========================================
+// PROVEEDORES
+// ==========================================
+
+model Proveedor {
+  id           String   @id @default(uuid())
+  codigo       String
+  nombre       String
+  ruc          String?
+  direccion    String?
+  telefono     String?
+  email        String?
+  activo       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Multi-tenant
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+
+  // Relations
+  compras      Compra[]
+
+  @@map("proveedores")
+  @@unique([tenantId, codigo])
+  @@index([tenantId])
+}
+
+// ==========================================
+// VENTAS
+// ==========================================
+
+model Venta {
+  id             String      @id @default(uuid())
+  numero         String
+  fecha          DateTime    @default(now())
+  clienteId      String?
+  cliente        Cliente?    @relation(fields: [clienteId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  subtotal       Float
+  impuesto       Float       @default(0)
+  total          Float
+  estado         String      @default("PENDIENTE") // PENDIENTE | COMPLETADA | CANCELADA
+  observaciones  String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  // Multi-tenant
+  tenantId       String
+  tenant         Tenant      @relation(fields: [tenantId], references: [id])
+
+  // Relations
+  items          VentaItem[]
+
+  @@map("ventas")
+  @@unique([tenantId, numero])
+  @@index([tenantId])
+  @@index([fecha])
+}
+
+model VentaItem {
+  id          String   @id @default(uuid())
+  ventaId     String
+  venta       Venta    @relation(fields: [ventaId], references: [id], onDelete: Cascade)
+  productoId  String
+  producto    Producto @relation(fields: [productoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  cantidad    Float
+  precioUnit  Float
+  subtotal    Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("venta_items")
+  @@index([ventaId])
+  @@index([productoId])
+}
+
+// Note: SQLite doesn't support enums, using String with validation
+// enum EstadoVenta {
+//   PENDIENTE
+//   COMPLETADA
+//   CANCELADA
+// }
+
+// ==========================================
+// COMPRAS
+// ==========================================
+
+model Compra {
+  id             String       @id @default(uuid())
+  numero         String
+  fecha          DateTime     @default(now())
+  proveedorId    String?
+  proveedor      Proveedor?   @relation(fields: [proveedorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  subtotal       Float
+  impuesto       Float        @default(0)
+  total          Float
+  estado         String       @default("PENDIENTE") // PENDIENTE | RECIBIDA | CANCELADA
+  observaciones  String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  // Multi-tenant
+  tenantId       String
+  tenant         Tenant       @relation(fields: [tenantId], references: [id])
+
+  // Relations
+  items          CompraItem[]
+
+  @@map("compras")
+  @@unique([tenantId, numero])
+  @@index([tenantId])
+  @@index([fecha])
+}
+
+model CompraItem {
+  id          String   @id @default(uuid())
+  compraId    String
+  compra      Compra   @relation(fields: [compraId], references: [id], onDelete: Cascade)
+  productoId  String
+  producto    Producto @relation(fields: [productoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  cantidad    Float
+  precioUnit  Float
+  subtotal    Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("compra_items")
+  @@index([compraId])
+  @@index([productoId])
+}
+
+// Note: SQLite doesn't support enums, using String with validation
+// enum EstadoCompra {
+//   PENDIENTE
+//   RECIBIDA
+//   CANCELADA
+// }
+
+// ==========================================
+// CONTABILIDAD - PLAN DE CUENTAS
+// ==========================================
+
+model PlanCuentas {
+  id              String   @id @default(uuid())
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id])
+
+  // Identificación
+  codigo          String   // 1.1.01.001
+  nombre          String
+  descripcion     String?
+
+  // Clasificación
+  tipo            String   // ACTIVO, PASIVO, PATRIMONIO, INGRESO, GASTO
+  naturaleza      String   // DEUDORA, ACREEDORA
+  nivel           Int      // 1, 2, 3, 4
+
+  // Jerarquía
+  cuentaPadreId   String?
+  cuentaPadre     PlanCuentas?  @relation("CuentaHija", fields: [cuentaPadreId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  cuentasHijas    PlanCuentas[] @relation("CuentaHija")
+
+  // Centro de Costo
+  centroCostoId   String?
+  centroCosto     CentroCosto? @relation(fields: [centroCostoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  subCentro       String?
+
+  // Para gastos
+  tipoGasto       String?      // COSTO, INVERSION
+  variabilidad    String?      // FIJO, VARIABLE
+
+  // Estado
+  aceptaMovimiento Boolean  @default(true)  // false para cuentas padre
+  activo           Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  lineasAsiento    LineaAsiento[]
+
+  @@unique([tenantId, codigo])
+  @@index([tenantId, tipo])
+  @@index([tenantId, nivel])
+  @@map("plan_cuentas")
+}
+
+model CentroCosto {
+  id              String   @id @default(uuid())
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id])
+
+  codigo          String
+  nombre          String   // Administración, Bovinos, Pastura, etc.
+  descripcion     String?
+  tipo            String?  // OPERATIVO, ADMINISTRATIVO, PRODUCCION
+  activo          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  cuentas         PlanCuentas[]
+  lineasAsiento   LineaAsiento[]
+
+  @@unique([tenantId, codigo])
+  @@map("centros_costo")
+}
+
+// ==========================================
+// CONTABILIDAD - ASIENTOS CONTABLES
+// ==========================================
+
+model AsientoContable {
+  id              String   @id @default(uuid())
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id])
+
+  numero          Int
+  fecha           DateTime
+  descripcion     String
+  tipo            String   // DIARIO, AJUSTE, CIERRE, APERTURA
+  estado          String   // BORRADOR, CONTABILIZADO, ANULADO
+
+  // Referencia
+  documentoRef    String?  // Factura, pago, etc.
+  tipoDoc         String?  // FACTURA_COMPRA, FACTURA_VENTA, PAGO, COBRO
+
+  // Auditoría
+  contabilizadoPor String?
+  fechaContabilizado DateTime?
+  anuladoPor      String?
+  fechaAnulado    DateTime?
+  motivoAnulacion String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  lineas          LineaAsiento[]
+
+  @@unique([tenantId, numero])
+  @@index([tenantId, fecha])
+  @@index([tenantId, estado])
+  @@map("asientos_contables")
+}
+
+model LineaAsiento {
+  id              String   @id @default(uuid())
+  asientoId       String
+  asiento         AsientoContable @relation(fields: [asientoId], references: [id], onDelete: Cascade)
+
+  // Cuenta
+  cuentaId        String
+  cuenta          PlanCuentas @relation(fields: [cuentaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  // Centro de Costo (opcional)
+  centroCostoId   String?
+  centroCosto     CentroCosto? @relation(fields: [centroCostoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  // Importes
+  debe            Float    @default(0)
+  haber           Float    @default(0)
+
+  // Referencia
+  descripcion     String?
+  documentoRef    String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([asientoId])
+  @@index([cuentaId])
+  @@map("lineas_asiento")
+}
