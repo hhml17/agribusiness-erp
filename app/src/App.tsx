@@ -1,6 +1,6 @@
 import { MsalProvider, AuthenticatedTemplate, UnauthenticatedTemplate } from '@azure/msal-react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { PublicClientApplication } from '@azure/msal-browser';
+import { PublicClientApplication, EventType } from '@azure/msal-browser';
 import { msalConfig } from './config/authConfig';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -15,6 +15,37 @@ import './App.css';
 
 // Initialize MSAL
 const msalInstance = new PublicClientApplication(msalConfig);
+
+// Initialize MSAL and handle redirect - CRITICAL for authentication flow
+msalInstance.initialize().then(() => {
+    // Handle the redirect promise from Azure AD
+    msalInstance.handleRedirectPromise()
+        .then((response) => {
+            if (response) {
+                console.log('Authentication successful:', response);
+                msalInstance.setActiveAccount(response.account);
+            } else {
+                // Check if there's an already authenticated account
+                const accounts = msalInstance.getAllAccounts();
+                if (accounts.length > 0) {
+                    msalInstance.setActiveAccount(accounts[0]);
+                }
+            }
+        })
+        .catch((error) => {
+            console.error('Error handling redirect:', error);
+        });
+});
+
+// Event callback for login success
+msalInstance.addEventCallback((event) => {
+    if (event.eventType === EventType.LOGIN_SUCCESS && event.payload) {
+        const payload = event.payload as any;
+        const account = payload.account;
+        msalInstance.setActiveAccount(account);
+        console.log('Login success event:', account);
+    }
+});
 
 function App() {
     return (
