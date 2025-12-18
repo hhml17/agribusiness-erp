@@ -6,8 +6,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlserver"  // Using Azure SQL Server
-  url      = env("DATABASE_URL")
+  provider          = "sqlserver" // Using Azure SQL Server
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 // ==========================================
@@ -15,15 +16,15 @@ datasource db {
 // ==========================================
 
 model Tenant {
-  id          String   @id @default(uuid())
-  nombre      String
-  ruc         String   @unique
-  direccion   String?
-  telefono    String?
-  email       String?
-  activo      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(uuid())
+  nombre    String
+  ruc       String   @unique
+  direccion String?
+  telefono  String?
+  email     String?
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations - Commercial
   usuarios    Usuario[]
@@ -34,31 +35,46 @@ model Tenant {
   compras     Compra[]
 
   // Relations - Accounting
-  planCuentas       PlanCuentas[]
-  centrosCosto      CentroCosto[]
-  asientos          AsientoContable[]
+  planCuentas  PlanCuentas[]
+  centrosCosto CentroCosto[]
+  asientos     AsientoContable[]
+
+  // Relations - Ganado
+  categoriasGanado  CategoriaGanado[]
+  ganado            Ganado[]
+  movimientosGanado MovimientoGanado[]
+
+  // Relations - Pagos y Compras
+  cuentasBancarias     CuentaBancaria[]
+  chequeras            Chequera[]
+  ordenesCompra        OrdenCompra[]
+  facturasCompra       FacturaCompra[]
+  ordenesPago          OrdenPago[]
+  retenciones          Retencion[]
+  movimientosBancarios MovimientoBancario[]
+  extractosBancarios   ExtractoBancario[]
 
   @@map("tenants")
 }
 
 model Usuario {
-  id            String   @id @default(uuid())
-  email         String   @unique
-  nombre        String
-  apellido      String?
-  azureAdId     String?  @unique  // Azure AD Object ID
-  activo        Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id        String   @id @default(uuid())
+  email     String   @unique
+  nombre    String
+  apellido  String?
+  azureAdId String?  @unique // Azure AD Object ID
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Multi-tenant relations
-  tenantId      String
-  tenant        Tenant   @relation(fields: [tenantId], references: [id])
-  role          String   @default("USER") // ADMIN | USER | VIEWER
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  role     String @default("USER") // ADMIN | USER | VIEWER
 
-  @@map("usuarios")
   @@index([tenantId])
   @@index([email])
+  @@map("usuarios")
 }
 
 // Note: SQLite doesn't support enums, using String with validation
@@ -73,32 +89,33 @@ model Usuario {
 // ==========================================
 
 model Producto {
-  id             String   @id @default(uuid())
-  codigo         String
-  nombre         String
-  descripcion    String?
-  categoria      String?
-  unidadMedida   String   // kg, litros, unidades, etc.
-  precioCompra   Float
-  precioVenta    Float
-  stock          Float    @default(0)
-  stockMinimo    Float?
-  activo         Boolean  @default(true)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id           String   @id @default(uuid())
+  codigo       String
+  nombre       String
+  descripcion  String?
+  categoria    String?
+  unidadMedida String // kg, litros, unidades, etc.
+  precioCompra Float
+  precioVenta  Float
+  stock        Float    @default(0)
+  stockMinimo  Float?
+  activo       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   // Multi-tenant
-  tenantId       String
-  tenant         Tenant   @relation(fields: [tenantId], references: [id])
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
 
   // Relations
-  ventaItems     VentaItem[]
-  compraItems    CompraItem[]
+  ventaItems       VentaItem[]
+  compraItems      CompraItem[]
+  itemsOrdenCompra ItemOrdenCompra[]
 
-  @@map("productos")
   @@unique([tenantId, codigo])
   @@index([tenantId])
   @@index([categoria])
+  @@map("productos")
 }
 
 // ==========================================
@@ -106,27 +123,27 @@ model Producto {
 // ==========================================
 
 model Cliente {
-  id           String   @id @default(uuid())
-  codigo       String
-  nombre       String
-  ruc          String?
-  direccion    String?
-  telefono     String?
-  email        String?
-  activo       Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id        String   @id @default(uuid())
+  codigo    String
+  nombre    String
+  ruc       String?
+  direccion String?
+  telefono  String?
+  email     String?
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Multi-tenant
-  tenantId     String
-  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
 
   // Relations
-  ventas       Venta[]
+  ventas Venta[]
 
-  @@map("clientes")
   @@unique([tenantId, codigo])
   @@index([tenantId])
+  @@map("clientes")
 }
 
 // ==========================================
@@ -134,27 +151,30 @@ model Cliente {
 // ==========================================
 
 model Proveedor {
-  id           String   @id @default(uuid())
-  codigo       String
-  nombre       String
-  ruc          String?
-  direccion    String?
-  telefono     String?
-  email        String?
-  activo       Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id        String   @id @default(uuid())
+  codigo    String
+  nombre    String
+  ruc       String?
+  direccion String?
+  telefono  String?
+  email     String?
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Multi-tenant
-  tenantId     String
-  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
 
   // Relations
-  compras      Compra[]
+  compras        Compra[]
+  ordenesCompra  OrdenCompra[]
+  facturasCompra FacturaCompra[]
+  ordenesPago    OrdenPago[]
 
-  @@map("proveedores")
   @@unique([tenantId, codigo])
   @@index([tenantId])
+  @@map("proveedores")
 }
 
 // ==========================================
@@ -162,47 +182,47 @@ model Proveedor {
 // ==========================================
 
 model Venta {
-  id             String      @id @default(uuid())
-  numero         String
-  fecha          DateTime    @default(now())
-  clienteId      String?
-  cliente        Cliente?    @relation(fields: [clienteId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  subtotal       Float
-  impuesto       Float       @default(0)
-  total          Float
-  estado         String      @default("PENDIENTE") // PENDIENTE | COMPLETADA | CANCELADA
-  observaciones  String?
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  id            String   @id @default(uuid())
+  numero        String
+  fecha         DateTime @default(now())
+  clienteId     String?
+  cliente       Cliente? @relation(fields: [clienteId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  subtotal      Float
+  impuesto      Float    @default(0)
+  total         Float
+  estado        String   @default("PENDIENTE") // PENDIENTE | COMPLETADA | CANCELADA
+  observaciones String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   // Multi-tenant
-  tenantId       String
-  tenant         Tenant      @relation(fields: [tenantId], references: [id])
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
 
   // Relations
-  items          VentaItem[]
+  items VentaItem[]
 
-  @@map("ventas")
   @@unique([tenantId, numero])
   @@index([tenantId])
   @@index([fecha])
+  @@map("ventas")
 }
 
 model VentaItem {
-  id          String   @id @default(uuid())
-  ventaId     String
-  venta       Venta    @relation(fields: [ventaId], references: [id], onDelete: Cascade)
-  productoId  String
-  producto    Producto @relation(fields: [productoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  cantidad    Float
-  precioUnit  Float
-  subtotal    Float
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(uuid())
+  ventaId    String
+  venta      Venta    @relation(fields: [ventaId], references: [id], onDelete: Cascade)
+  productoId String
+  producto   Producto @relation(fields: [productoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  cantidad   Float
+  precioUnit Float
+  subtotal   Float
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  @@map("venta_items")
   @@index([ventaId])
   @@index([productoId])
+  @@map("venta_items")
 }
 
 // Note: SQLite doesn't support enums, using String with validation
@@ -217,47 +237,115 @@ model VentaItem {
 // ==========================================
 
 model Compra {
-  id             String       @id @default(uuid())
-  numero         String
-  fecha          DateTime     @default(now())
-  proveedorId    String?
-  proveedor      Proveedor?   @relation(fields: [proveedorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  subtotal       Float
-  impuesto       Float        @default(0)
-  total          Float
-  estado         String       @default("PENDIENTE") // PENDIENTE | RECIBIDA | CANCELADA
-  observaciones  String?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  id            String     @id @default(uuid())
+  numero        String
+  fecha         DateTime   @default(now())
+  proveedorId   String?
+  proveedor     Proveedor? @relation(fields: [proveedorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  subtotal      Float
+  impuesto      Float      @default(0)
+  total         Float
+  estado        String     @default("PENDIENTE") // PENDIENTE | RECIBIDA | CANCELADA
+  observaciones String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
 
   // Multi-tenant
-  tenantId       String
-  tenant         Tenant       @relation(fields: [tenantId], references: [id])
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
 
   // Relations
-  items          CompraItem[]
+  items CompraItem[]
 
-  @@map("compras")
   @@unique([tenantId, numero])
   @@index([tenantId])
   @@index([fecha])
+  @@map("compras")
 }
 
 model CompraItem {
+  id         String   @id @default(uuid())
+  compraId   String
+  compra     Compra   @relation(fields: [compraId], references: [id], onDelete: Cascade)
+  productoId String
+  producto   Producto @relation(fields: [productoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  cantidad   Float
+  precioUnit Float
+  subtotal   Float
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([compraId])
+  @@index([productoId])
+  @@map("compra_items")
+}
+
+// ==========================================
+// GANADO
+// ==========================================
+
+model CategoriaGanado {
   id          String   @id @default(uuid())
-  compraId    String
-  compra      Compra   @relation(fields: [compraId], references: [id], onDelete: Cascade)
-  productoId  String
-  producto    Producto @relation(fields: [productoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  cantidad    Float
-  precioUnit  Float
-  subtotal    Float
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  nombre      String
+  descripcion String?
+  activo      Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@map("compra_items")
-  @@index([compraId])
-  @@index([productoId])
+  ganado Ganado[]
+
+  @@unique([tenantId, nombre])
+  @@map("categoria_ganado")
+}
+
+model Ganado {
+  id          String          @id @default(uuid())
+  tenantId    String
+  tenant      Tenant          @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  categoriaId String
+  categoria   CategoriaGanado @relation(fields: [categoriaId], references: [id])
+
+  arete           String?
+  nombre          String?
+  fechaNacimiento DateTime?
+  sexo            String // MACHO | HEMBRA
+  peso            Float?
+  estado          String    @default("ACTIVO") // ACTIVO | VENDIDO | MUERTO
+
+  // Relations
+  movimientos MovimientoGanado[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, arete])
+  @@index([tenantId])
+  @@index([categoriaId])
+  @@map("ganado")
+}
+
+model MovimientoGanado {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ganadoId String
+  ganado   Ganado @relation(fields: [ganadoId], references: [id])
+
+  fecha       DateTime
+  tipo        String // COMPRA | VENTA | NACIMIENTO | MUERTE | TRASLADO
+  descripcion String?
+  peso        Float?
+  precio      Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([ganadoId])
+  @@index([fecha])
+  @@map("movimiento_ganado")
 }
 
 // Note: SQLite doesn't support enums, using String with validation
@@ -272,42 +360,43 @@ model CompraItem {
 // ==========================================
 
 model PlanCuentas {
-  id              String   @id @default(uuid())
-  tenantId        String
-  tenant          Tenant   @relation(fields: [tenantId], references: [id])
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
 
   // Identificación
-  codigo          String   // 1.1.01.001
-  nombre          String
-  descripcion     String?
+  codigo      String // 1.1.01.001
+  nombre      String
+  descripcion String?
 
   // Clasificación
-  tipo            String   // ACTIVO, PASIVO, PATRIMONIO, INGRESO, GASTO
-  naturaleza      String   // DEUDORA, ACREEDORA
-  nivel           Int      // 1, 2, 3, 4
+  tipo       String // ACTIVO, PASIVO, PATRIMONIO, INGRESO, GASTO
+  naturaleza String // DEUDORA, ACREEDORA
+  nivel      Int // 1, 2, 3, 4
 
   // Jerarquía
-  cuentaPadreId   String?
-  cuentaPadre     PlanCuentas?  @relation("CuentaHija", fields: [cuentaPadreId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  cuentasHijas    PlanCuentas[] @relation("CuentaHija")
+  cuentaPadreId String?
+  cuentaPadre   PlanCuentas?  @relation("CuentaHija", fields: [cuentaPadreId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  cuentasHijas  PlanCuentas[] @relation("CuentaHija")
 
   // Centro de Costo
-  centroCostoId   String?
-  centroCosto     CentroCosto? @relation(fields: [centroCostoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  subCentro       String?
+  centroCostoId String?
+  centroCosto   CentroCosto? @relation(fields: [centroCostoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  subCentro     String?
 
   // Para gastos
-  tipoGasto       String?      // COSTO, INVERSION
-  variabilidad    String?      // FIJO, VARIABLE
+  tipoGasto    String? // COSTO, INVERSION
+  variabilidad String? // FIJO, VARIABLE
 
   // Estado
-  aceptaMovimiento Boolean  @default(true)  // false para cuentas padre
+  aceptaMovimiento Boolean  @default(true) // false para cuentas padre
   activo           Boolean  @default(true)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
   // Relations
   lineasAsiento    LineaAsiento[]
+  cuentasBancarias CuentaBancaria[]
 
   @@unique([tenantId, codigo])
   @@index([tenantId, tipo])
@@ -316,21 +405,21 @@ model PlanCuentas {
 }
 
 model CentroCosto {
-  id              String   @id @default(uuid())
-  tenantId        String
-  tenant          Tenant   @relation(fields: [tenantId], references: [id])
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
 
-  codigo          String
-  nombre          String   // Administración, Bovinos, Pastura, etc.
-  descripcion     String?
-  tipo            String?  // OPERATIVO, ADMINISTRATIVO, PRODUCCION
-  activo          Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  codigo      String
+  nombre      String // Administración, Bovinos, Pastura, etc.
+  descripcion String?
+  tipo        String? // OPERATIVO, ADMINISTRATIVO, PRODUCCION
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Relations
-  cuentas         PlanCuentas[]
-  lineasAsiento   LineaAsiento[]
+  cuentas       PlanCuentas[]
+  lineasAsiento LineaAsiento[]
 
   @@unique([tenantId, codigo])
   @@map("centros_costo")
@@ -341,32 +430,33 @@ model CentroCosto {
 // ==========================================
 
 model AsientoContable {
-  id              String   @id @default(uuid())
-  tenantId        String
-  tenant          Tenant   @relation(fields: [tenantId], references: [id])
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
 
-  numero          Int
-  fecha           DateTime
-  descripcion     String
-  tipo            String   // DIARIO, AJUSTE, CIERRE, APERTURA
-  estado          String   // BORRADOR, CONTABILIZADO, ANULADO
+  numero      Int
+  fecha       DateTime
+  descripcion String
+  tipo        String // DIARIO, AJUSTE, CIERRE, APERTURA
+  estado      String // BORRADOR, CONTABILIZADO, ANULADO
 
   // Referencia
-  documentoRef    String?  // Factura, pago, etc.
-  tipoDoc         String?  // FACTURA_COMPRA, FACTURA_VENTA, PAGO, COBRO
+  documentoRef String? // Factura, pago, etc.
+  tipoDoc      String? // FACTURA_COMPRA, FACTURA_VENTA, PAGO, COBRO
 
   // Auditoría
-  contabilizadoPor String?
+  contabilizadoPor   String?
   fechaContabilizado DateTime?
-  anuladoPor      String?
-  fechaAnulado    DateTime?
-  motivoAnulacion String?
+  anuladoPor         String?
+  fechaAnulado       DateTime?
+  motivoAnulacion    String?
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  lineas          LineaAsiento[]
+  lineas    LineaAsiento[]
+  ordenPago OrdenPago?
 
   @@unique([tenantId, numero])
   @@index([tenantId, fecha])
@@ -375,30 +465,414 @@ model AsientoContable {
 }
 
 model LineaAsiento {
-  id              String   @id @default(uuid())
-  asientoId       String
-  asiento         AsientoContable @relation(fields: [asientoId], references: [id], onDelete: Cascade)
+  id        String          @id @default(uuid())
+  asientoId String
+  asiento   AsientoContable @relation(fields: [asientoId], references: [id], onDelete: Cascade)
 
   // Cuenta
-  cuentaId        String
-  cuenta          PlanCuentas @relation(fields: [cuentaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  cuentaId String
+  cuenta   PlanCuentas @relation(fields: [cuentaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   // Centro de Costo (opcional)
-  centroCostoId   String?
-  centroCosto     CentroCosto? @relation(fields: [centroCostoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  centroCostoId String?
+  centroCosto   CentroCosto? @relation(fields: [centroCostoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   // Importes
-  debe            Float    @default(0)
-  haber           Float    @default(0)
+  debe  Float @default(0)
+  haber Float @default(0)
 
   // Referencia
-  descripcion     String?
-  documentoRef    String?
+  descripcion  String?
+  documentoRef String?
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([asientoId])
   @@index([cuentaId])
   @@map("lineas_asiento")
+}
+
+// ==========================================
+// GESTIÓN DE PAGOS Y COMPRAS
+// ==========================================
+
+// CUENTAS BANCARIAS
+model CuentaBancaria {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  banco        String // Nombre del banco
+  tipoCuenta   String // CUENTA_CORRIENTE, CAJA_AHORRO
+  numeroCuenta String
+  moneda       String @default("PYG") // PYG, USD
+  saldoActual  Float  @default(0)
+
+  // Relación con Plan de Cuentas
+  cuentaContableId String?
+  cuentaContable   PlanCuentas? @relation(fields: [cuentaContableId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  chequeras   Chequera[]
+  movimientos MovimientoBancario[]
+  ordenesPago OrdenPago[]
+  extractos   ExtractoBancario[]
+
+  @@unique([tenantId, numeroCuenta])
+  @@map("cuentas_bancarias")
+}
+
+// CHEQUERAS
+model Chequera {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  cuentaBancariaId String
+  cuentaBancaria   CuentaBancaria @relation(fields: [cuentaBancariaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  numeroInicial   Int
+  numeroFinal     Int
+  siguienteNumero Int // Próximo cheque a usar
+
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  cheques Cheque[]
+
+  @@map("chequeras")
+}
+
+// CHEQUES
+model Cheque {
+  id         String   @id @default(uuid())
+  chequeraId String
+  chequera   Chequera @relation(fields: [chequeraId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  numero       Int
+  monto        Float
+  beneficiario String
+  fecha        DateTime
+  fechaCobro   DateTime? // Para cheques diferidos
+  esDiferido   Boolean   @default(false)
+
+  estado String // EMITIDO, COBRADO, ANULADO, REVERSADO
+
+  // Datos de cobro
+  fechaEfectivoCobro DateTime?
+  numeroTransaccion  String?
+
+  movimientoBancarioId String?             @unique
+  movimientoBancario   MovimientoBancario? @relation(fields: [movimientoBancarioId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("cheques")
+}
+
+// ORDENES DE COMPRA
+model OrdenCompra {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  numero String
+  fecha  DateTime @default(now())
+
+  proveedorId String
+  proveedor   Proveedor @relation(fields: [proveedorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  descripcion   String
+  observaciones String?
+
+  subtotal Float
+  iva      Float @default(0)
+  total    Float
+
+  // Workflow
+  estado          String // BORRADOR, PENDIENTE_APROBACION, APROBADA, RECHAZADA, ANULADA
+  solicitadoPor   String? // Usuario que solicita
+  aprobadoPor     String? // Usuario que aprueba
+  fechaAprobacion DateTime?
+  motivoRechazo   String?
+
+  // Auditoría
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  items    ItemOrdenCompra[]
+  facturas FacturaCompra[]
+
+  @@unique([tenantId, numero])
+  @@index([tenantId, estado])
+  @@map("ordenes_compra")
+}
+
+model ItemOrdenCompra {
+  id            String      @id @default(uuid())
+  ordenCompraId String
+  ordenCompra   OrdenCompra @relation(fields: [ordenCompraId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  descripcion    String
+  cantidad       Float
+  unidadMedida   String
+  precioUnitario Float
+  subtotal       Float
+
+  productoId String?
+  producto   Producto? @relation(fields: [productoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("items_orden_compra")
+}
+
+// FACTURAS DE COMPRA
+model FacturaCompra {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  // Identificación
+  numero           String // Número de factura del proveedor
+  timbrado         String? // Timbrado de la factura
+  fecha            DateTime
+  fechaVencimiento DateTime?
+
+  // Proveedor
+  proveedorId String
+  proveedor   Proveedor @relation(fields: [proveedorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  // Tipo de factura
+  tipo String // NORMAL, ANTICIPO, GASTO_NO_DEDUCIBLE, CAJA_CHICA
+
+  // Vinculación con OC (opcional)
+  ordenCompraId String?
+  ordenCompra   OrdenCompra? @relation(fields: [ordenCompraId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  // Importes
+  subtotal Float
+  iva10    Float @default(0)
+  iva5     Float @default(0)
+  exentas  Float @default(0)
+  total    Float
+
+  // Estado
+  estado         String // PENDIENTE, APROBADA, RECHAZADA, PAGADA_PARCIAL, PAGADA_TOTAL, ANULADA
+  saldoPendiente Float // Total - pagos realizados
+
+  descripcion   String?
+  observaciones String?
+
+  // Auditoría
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  ordenesPago OrdenPago[]
+
+  @@unique([tenantId, numero, timbrado])
+  @@index([tenantId, estado])
+  @@index([proveedorId])
+  @@map("facturas_compra")
+}
+
+// ORDENES DE PAGO
+model OrdenPago {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  numero String
+  fecha  DateTime @default(now())
+
+  // Proveedor/Beneficiario
+  proveedorId  String?
+  proveedor    Proveedor? @relation(fields: [proveedorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  beneficiario String // Nombre del beneficiario
+
+  // Facturas asociadas
+  facturaCompraId String?
+  facturaCompra   FacturaCompra? @relation(fields: [facturaCompraId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  // Método de pago
+  metodoPago String // EFECTIVO, TRANSFERENCIA, CHEQUE, CHEQUE_DIFERIDO
+
+  // Cuenta bancaria (si aplica)
+  cuentaBancariaId String?
+  cuentaBancaria   CuentaBancaria? @relation(fields: [cuentaBancariaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  // Importes
+  montoTotal Float
+  montoNeto  Float // Monto después de retenciones
+
+  // Retenciones
+  retencionIVA Float @default(0)
+  retencionIRE Float @default(0)
+
+  // Workflow
+  estado          String // BORRADOR, PENDIENTE_APROBACION, APROBADA, RECHAZADA, PAGADA, ANULADA
+  solicitadoPor   String?
+  aprobadoPor     String?
+  fechaAprobacion DateTime?
+  fechaPago       DateTime?
+  motivoRechazo   String?
+
+  // Referencia contable
+  asientoContableId String?          @unique
+  asientoContable   AsientoContable? @relation(fields: [asientoContableId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  descripcion   String?
+  observaciones String?
+
+  // Auditoría
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  movimientos MovimientoBancario[]
+  retenciones Retencion[]
+
+  @@unique([tenantId, numero])
+  @@index([tenantId, estado])
+  @@index([proveedorId])
+  @@map("ordenes_pago")
+}
+
+// RETENCIONES (IVA, IRE)
+model Retencion {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  ordenPagoId String
+  ordenPago   OrdenPago @relation(fields: [ordenPagoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  tipo              String // IVA, IRE, IRP, OTRO
+  numeroComprobante String? // Número del comprobante de retención
+  monto             Float
+  porcentaje        Float? // Porcentaje aplicado
+
+  // Datos del comprobante
+  fechaEmision    DateTime @default(now())
+  rucBeneficiario String?
+
+  observaciones String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([ordenPagoId])
+  @@map("retenciones")
+}
+
+// MOVIMIENTOS BANCARIOS
+model MovimientoBancario {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  cuentaBancariaId String
+  cuentaBancaria   CuentaBancaria @relation(fields: [cuentaBancariaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  // Tipo de movimiento
+  tipo       String // CHEQUE, TRANSFERENCIA, EFECTIVO, DEPOSITO, NOTA_DEBITO, NOTA_CREDITO
+  naturaleza String // EGRESO, INGRESO
+
+  // Datos del movimiento
+  fecha            DateTime
+  numeroReferencia String? // Número de cheque, transferencia, etc.
+  monto            Float
+  descripcion      String
+
+  // Orden de pago relacionada
+  ordenPagoId String?
+  ordenPago   OrdenPago? @relation(fields: [ordenPagoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  // Conciliación
+  estado            String // PENDIENTE, CONCILIADO, REVERSADO
+  fechaConciliacion DateTime?
+  conciliadoPor     String?
+
+  // Datos del extracto bancario
+  extractoBancarioId String?
+  extractoBancario   ExtractoBancario? @relation(fields: [extractoBancarioId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  // Cheque relacionado
+  cheque Cheque?
+
+  observaciones String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, estado])
+  @@index([cuentaBancariaId])
+  @@map("movimientos_bancarios")
+}
+
+// EXTRACTOS BANCARIOS
+model ExtractoBancario {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  cuentaBancariaId String
+  cuentaBancaria   CuentaBancaria @relation(fields: [cuentaBancariaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  periodo    String // "2025-01" formato YYYY-MM
+  fechaDesde DateTime
+  fechaHasta DateTime
+
+  saldoInicial Float
+  saldoFinal   Float
+
+  // Archivo adjunto
+  archivoUrl String?
+
+  estado String // PENDIENTE, CONCILIADO, PARCIAL
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  movimientos    MovimientoBancario[]
+  lineasExtracto LineaExtractoBancario[]
+
+  @@unique([tenantId, cuentaBancariaId, periodo])
+  @@map("extractos_bancarios")
+}
+
+// LINEAS DEL EXTRACTO BANCARIO
+model LineaExtractoBancario {
+  id         String           @id @default(uuid())
+  extractoId String
+  extracto   ExtractoBancario @relation(fields: [extractoId], references: [id], onDelete: Cascade)
+
+  fecha            DateTime
+  descripcion      String
+  numeroReferencia String?
+  debito           Float    @default(0)
+  credito          Float    @default(0)
+  saldo            Float
+
+  // Conciliación
+  conciliado           Boolean @default(false)
+  movimientoBancarioId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("lineas_extracto_bancario")
 }
