@@ -9,6 +9,9 @@ dist/
 .env.local
 .env.*.local
 
+# Sensitive documentation (contains tokens)
+docs/INSTRUCCIONES_DEPLOY_RAPIDO.md
+
 # Logs
 logs/
 *.log
