@@ -28,29 +28,29 @@ export const contabilidadService = {
       includeHijas?: boolean;
     }): Promise<{ cuentas: PlanCuentas[]; total: number }> {
       const response = await apiClient.get<ApiResponse<{ cuentas: PlanCuentas[]; total: number }>>(
-        '/contable/plan-cuentas',
+        '/api/plan-cuentas',
         { params }
       );
       return response.data.data;
     },
 
     async getById(id: string): Promise<PlanCuentas> {
-      const response = await apiClient.get<ApiResponse<PlanCuentas>>(`/contable/plan-cuentas/${id}`);
+      const response = await apiClient.get<ApiResponse<PlanCuentas>>(`/api/plan-cuentas/${id}`);
       return response.data.data;
     },
 
     async create(data: PlanCuentasFormData): Promise<PlanCuentas> {
-      const response = await apiClient.post<ApiResponse<PlanCuentas>>('/contable/plan-cuentas', data);
+      const response = await apiClient.post<ApiResponse<PlanCuentas>>('/api/plan-cuentas', data);
       return response.data.data;
     },
 
     async update(id: string, data: Partial<PlanCuentasFormData>): Promise<PlanCuentas> {
-      const response = await apiClient.put<ApiResponse<PlanCuentas>>(`/contable/plan-cuentas/${id}`, data);
+      const response = await apiClient.put<ApiResponse<PlanCuentas>>(`/api/plan-cuentas/${id}`, data);
       return response.data.data;
     },
 
     async delete(id: string): Promise<void> {
-      await apiClient.delete(`/contable/plan-cuentas/${id}`);
+      await apiClient.delete(`/api/plan-cuentas/${id}`);
     },
   },
 
@@ -61,24 +61,24 @@ export const contabilidadService = {
       activo?: boolean;
     }): Promise<{ centros: CentroCosto[]; total: number }> {
       const response = await apiClient.get<ApiResponse<{ centros: CentroCosto[]; total: number }>>(
-        '/contable/centros-costo',
+        '/api/centros-costo',
         { params }
       );
       return response.data.data;
     },
 
     async getById(id: string): Promise<CentroCosto> {
-      const response = await apiClient.get<ApiResponse<CentroCosto>>(`/contable/centros-costo/${id}`);
+      const response = await apiClient.get<ApiResponse<CentroCosto>>(`/api/centros-costo/${id}`);
       return response.data.data;
     },
 
     async create(data: CentroCostoFormData): Promise<CentroCosto> {
-      const response = await apiClient.post<ApiResponse<CentroCosto>>('/contable/centros-costo', data);
+      const response = await apiClient.post<ApiResponse<CentroCosto>>('/api/centros-costo', data);
       return response.data.data;
     },
 
     async update(id: string, data: Partial<CentroCostoFormData>): Promise<CentroCosto> {
-      const response = await apiClient.put<ApiResponse<CentroCosto>>(`/contable/centros-costo/${id}`, data);
+      const response = await apiClient.put<ApiResponse<CentroCosto>>(`/api/centros-costo/${id}`, data);
       return response.data.data;
     },
   },
@@ -111,28 +111,28 @@ export const contabilidadService = {
             totalPages: number;
           };
         }>
-      >('/contable/asientos', { params });
+      >('/api/asientos', { params });
       return response.data.data;
     },
 
     async getById(id: string): Promise<AsientoContable> {
-      const response = await apiClient.get<ApiResponse<AsientoContable>>(`/contable/asientos/${id}`);
+      const response = await apiClient.get<ApiResponse<AsientoContable>>(`/api/asientos/${id}`);
       return response.data.data;
     },
 
     async create(data: AsientoFormData): Promise<AsientoContable> {
-      const response = await apiClient.post<ApiResponse<AsientoContable>>('/contable/asientos', data);
+      const response = await apiClient.post<ApiResponse<AsientoContable>>('/api/asientos', data);
       return response.data.data;
     },
 
     async contabilizar(id: string): Promise<AsientoContable> {
-      const response = await apiClient.put<ApiResponse<AsientoContable>>(`/contable/asientos/${id}/contabilizar`);
+      const response = await apiClient.put<ApiResponse<AsientoContable>>(`/api/asientos/${id}/contabilizar`);
       return response.data.data;
     },
 
     async anular(id: string, motivoAnulacion: string): Promise<AsientoContable> {
       const response = await apiClient.put<ApiResponse<AsientoContable>>(
-        `/contable/asientos/${id}/anular`,
+        `/api/asientos/${id}/anular`,
         { motivoAnulacion }
       );
       return response.data.data;
@@ -145,8 +145,8 @@ export const contabilidadService = {
       fechaHasta?: string;
       nivel?: number;
     }): Promise<BalanceGeneral> {
-      const response = await apiClient.get<ApiResponse<BalanceGeneral>>('/contable/balance', { params });
-      return response.data.data;
+      const response = await apiClient.get<BalanceGeneral>('/api/reportes/balance', { params });
+      return response.data;
     },
 
     async getEstadoResultados(params?: {
@@ -154,10 +154,10 @@ export const contabilidadService = {
       fechaHasta?: string;
       nivel?: number;
     }): Promise<EstadoResultados> {
-      const response = await apiClient.get<ApiResponse<EstadoResultados>>('/contable/estado-resultados', {
+      const response = await apiClient.get<EstadoResultados>('/api/reportes/estado-resultados', {
         params,
       });
-      return response.data.data;
+      return response.data;
     },
 
     async getMayor(params: {
@@ -165,8 +165,8 @@ export const contabilidadService = {
       fechaDesde?: string;
       fechaHasta?: string;
     }): Promise<LibroMayor> {
-      const response = await apiClient.get<ApiResponse<LibroMayor>>('/contable/mayor', { params });
-      return response.data.data;
+      const response = await apiClient.get<LibroMayor>('/api/reportes/libro-mayor', { params });
+      return response.data;
     },
   },
 };

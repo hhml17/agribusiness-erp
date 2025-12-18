@@ -111,45 +111,47 @@ export type TipoDocumento = 'FACTURA_COMPRA' | 'FACTURA_VENTA' | 'PAGO' | 'COBRO
 // ==========================================
 
 export interface BalanceGeneral {
-  fecha: string;
-  activos: {
-    cuentas: CuentaConSaldo[];
-    total: number;
-  };
-  pasivos: {
-    cuentas: CuentaConSaldo[];
-    total: number;
-  };
-  patrimonio: {
-    cuentas: CuentaConSaldo[];
-    resultadoEjercicio: number;
-    total: number;
-  };
-  totales: {
-    activos: number;
-    pasivosYPatrimonio: number;
-    diferencia: number;
-    balanceado: boolean;
-  };
+  fecha: string | Date;
+  activos: CuentaConSaldo[];
+  pasivos: CuentaConSaldo[];
+  patrimonio: CuentaConSaldo[];
+  totalActivos: number;
+  totalPasivos: number;
+  totalPatrimonio: number;
 }
 
 export interface EstadoResultados {
-  periodo: {
-    desde: string;
-    hasta: string;
-  };
-  ingresos: {
-    cuentas: CuentaConSaldo[];
+  fechaDesde: string | Date;
+  fechaHasta: string | Date;
+  ingresos: Array<{
+    id: string;
+    codigo: string;
+    nombre: string;
+    tipo: string;
+    nivel: number;
+    centroCosto?: string;
+    tipoGasto?: string;
+    variabilidad?: string;
     total: number;
-  };
-  gastos: {
-    cuentas: CuentaConSaldo[];
+    debe: number;
+    haber: number;
+  }>;
+  gastos: Array<{
+    id: string;
+    codigo: string;
+    nombre: string;
+    tipo: string;
+    nivel: number;
+    centroCosto?: string;
+    tipoGasto?: string;
+    variabilidad?: string;
     total: number;
-  };
-  resultado: {
-    utilidadNeta: number;
-    tipo: 'UTILIDAD' | 'PERDIDA';
-  };
+    debe: number;
+    haber: number;
+  }>;
+  totalIngresos: number;
+  totalGastos: number;
+  utilidadNeta: number;
 }
 
 export interface LibroMayor {

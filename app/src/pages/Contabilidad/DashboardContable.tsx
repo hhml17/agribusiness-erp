@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { contabilidadService } from '../../services/contabilidad.service';
 import type { BalanceGeneral, EstadoResultados, AsientoContable } from '../../types/contabilidad';
 import '../../styles/contabilidad.css';
 
@@ -20,104 +21,17 @@ const DashboardContable = () => {
       setLoading(true);
       setError(null);
 
-      // TODO: Replace with real API calls when backend is ready
-      // Datos de prueba (mock data)
-      setTimeout(() => {
-        const mockBalance: BalanceGeneral = {
-          fecha: new Date().toISOString(),
-          activos: {
-            total: 150000000,
-            cuentas: [
-              { id: '1', codigo: '1.1.1', nombre: 'Caja', saldo: 5000000, tipo: 'ACTIVO', naturaleza: 'DEUDORA', nivel: 3, debe: 5000000, haber: 0 },
-              { id: '2', codigo: '1.1.2', nombre: 'Banco Itaú', saldo: 25000000, tipo: 'ACTIVO', naturaleza: 'DEUDORA', nivel: 3, debe: 25000000, haber: 0 },
-              { id: '3', codigo: '1.2.1', nombre: 'Clientes', saldo: 40000000, tipo: 'ACTIVO', naturaleza: 'DEUDORA', nivel: 3, debe: 40000000, haber: 0 },
-              { id: '4', codigo: '1.3.1', nombre: 'Inventario Ganadero', saldo: 80000000, tipo: 'ACTIVO', naturaleza: 'DEUDORA', nivel: 3, debe: 80000000, haber: 0 },
-            ]
-          },
-          pasivos: {
-            total: 50000000,
-            cuentas: [
-              { id: '5', codigo: '2.1.1', nombre: 'Proveedores', saldo: 30000000, tipo: 'PASIVO', naturaleza: 'ACREEDORA', nivel: 3, debe: 0, haber: 30000000 },
-              { id: '6', codigo: '2.2.1', nombre: 'Préstamo Bancario', saldo: 20000000, tipo: 'PASIVO', naturaleza: 'ACREEDORA', nivel: 3, debe: 0, haber: 20000000 },
-            ]
-          },
-          patrimonio: {
-            total: 100000000,
-            resultadoEjercicio: 15000000,
-            cuentas: [
-              { id: '7', codigo: '3.1.1', nombre: 'Capital Social', saldo: 85000000, tipo: 'PATRIMONIO', naturaleza: 'ACREEDORA', nivel: 3, debe: 0, haber: 85000000 },
-            ]
-          },
-          totales: {
-            activos: 150000000,
-            pasivosYPatrimonio: 150000000,
-            diferencia: 0,
-            balanceado: true
-          }
-        };
+      // Cargar datos reales del API
+      const [balanceData, estadoData, asientosData] = await Promise.all([
+        contabilidadService.reportes.getBalance(),
+        contabilidadService.reportes.getEstadoResultados(),
+        contabilidadService.asientos.getAll({ estado: 'CONTABILIZADO', limit: 5 })
+      ]);
 
-        const mockEstado: EstadoResultados = {
-          periodo: {
-            desde: new Date(new Date().getFullYear(), 0, 1).toISOString(),
-            hasta: new Date().toISOString()
-          },
-          ingresos: {
-            total: 80000000,
-            cuentas: [
-              { id: '8', codigo: '4.1.1', nombre: 'Venta de Ganado', saldo: 60000000, tipo: 'INGRESO', naturaleza: 'ACREEDORA', nivel: 3, debe: 0, haber: 60000000 },
-              { id: '9', codigo: '4.1.2', nombre: 'Venta de Productos Agrícolas', saldo: 20000000, tipo: 'INGRESO', naturaleza: 'ACREEDORA', nivel: 3, debe: 0, haber: 20000000 },
-            ]
-          },
-          gastos: {
-            total: 65000000,
-            cuentas: [
-              { id: '10', codigo: '5.1.1', nombre: 'Costos Operativos', saldo: 40000000, tipo: 'GASTO', naturaleza: 'DEUDORA', nivel: 3, debe: 40000000, haber: 0 },
-              { id: '11', codigo: '5.1.2', nombre: 'Gastos Administrativos', saldo: 15000000, tipo: 'GASTO', naturaleza: 'DEUDORA', nivel: 3, debe: 15000000, haber: 0 },
-              { id: '12', codigo: '5.1.3', nombre: 'Gastos Financieros', saldo: 10000000, tipo: 'GASTO', naturaleza: 'DEUDORA', nivel: 3, debe: 10000000, haber: 0 },
-            ]
-          },
-          resultado: {
-            utilidadNeta: 15000000,
-            tipo: 'UTILIDAD'
-          }
-        };
-
-        const mockAsientos: AsientoContable[] = [
-          {
-            id: '1',
-            tenantId: 'demo-tenant',
-            numero: 1,
-            fecha: new Date().toISOString(),
-            descripcion: 'Venta de ganado - Lote 001',
-            tipo: 'DIARIO',
-            estado: 'CONTABILIZADO',
-            totalDebe: 15000000,
-            totalHaber: 15000000,
-            lineas: [],
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          },
-          {
-            id: '2',
-            tenantId: 'demo-tenant',
-            numero: 2,
-            fecha: new Date().toISOString(),
-            descripcion: 'Pago a proveedores',
-            tipo: 'DIARIO',
-            estado: 'CONTABILIZADO',
-            totalDebe: 5000000,
-            totalHaber: 5000000,
-            lineas: [],
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          },
-        ];
-
-        setBalance(mockBalance);
-        setEstadoResultados(mockEstado);
-        setUltimosAsientos(mockAsientos);
-        setLoading(false);
-      }, 500);
+      setBalance(balanceData);
+      setEstadoResultados(estadoData);
+      setUltimosAsientos(asientosData.asientos || []);
+      setLoading(false);
 
     } catch (err: any) {
       setError(err.response?.data?.error || 'Error al cargar el dashboard');
@@ -183,28 +97,28 @@ const DashboardContable = () => {
         <div className="metric-card">
           <div className="metric-label">Total Activos</div>
           <div className="metric-value positive">
-            {balance ? formatCurrency(balance.totales.activos) : '-'}
+            {balance ? formatCurrency(balance.totalActivos) : '-'}
           </div>
         </div>
 
         <div className="metric-card">
           <div className="metric-label">Total Pasivos</div>
           <div className="metric-value">
-            {balance ? formatCurrency(balance.pasivos.total) : '-'}
+            {balance ? formatCurrency(balance.totalPasivos) : '-'}
           </div>
         </div>
 
         <div className="metric-card">
           <div className="metric-label">Patrimonio</div>
           <div className="metric-value">
-            {balance ? formatCurrency(balance.patrimonio.total) : '-'}
+            {balance ? formatCurrency(balance.totalPatrimonio) : '-'}
           </div>
         </div>
 
         <div className="metric-card">
           <div className="metric-label">Resultado del Ejercicio</div>
-          <div className={`metric-value ${estadoResultados && estadoResultados.resultado.utilidadNeta >= 0 ? 'positive' : 'negative'}`}>
-            {estadoResultados ? formatCurrency(estadoResultados.resultado.utilidadNeta) : '-'}
+          <div className={`metric-value ${estadoResultados && estadoResultados.utilidadNeta >= 0 ? 'positive' : 'negative'}`}>
+            {estadoResultados ? formatCurrency(estadoResultados.utilidadNeta) : '-'}
           </div>
         </div>
       </div>
@@ -215,7 +129,7 @@ const DashboardContable = () => {
           <div className="card-header">
             <h2>Estado de Resultados</h2>
             <span className="text-muted">
-              {formatDate(estadoResultados.periodo.desde)} - {formatDate(estadoResultados.periodo.hasta)}
+              {formatDate(estadoResultados.fechaDesde.toString())} - {formatDate(estadoResultados.fechaHasta.toString())}
             </span>
           </div>
           <div className="card-body">
@@ -223,19 +137,19 @@ const DashboardContable = () => {
               <div className="result-row">
                 <span className="result-label">Ingresos Totales</span>
                 <span className="result-value positive">
-                  {formatCurrency(estadoResultados.ingresos.total)}
+                  {formatCurrency(estadoResultados.totalIngresos)}
                 </span>
               </div>
               <div className="result-row">
                 <span className="result-label">Gastos Totales</span>
                 <span className="result-value negative">
-                  ({formatCurrency(estadoResultados.gastos.total)})
+                  ({formatCurrency(estadoResultados.totalGastos)})
                 </span>
               </div>
               <div className="result-row total">
                 <span className="result-label">Utilidad/Pérdida Neta</span>
-                <span className={`result-value ${estadoResultados.resultado.utilidadNeta >= 0 ? 'positive' : 'negative'}`}>
-                  {formatCurrency(estadoResultados.resultado.utilidadNeta)}
+                <span className={`result-value ${estadoResultados.utilidadNeta >= 0 ? 'positive' : 'negative'}`}>
+                  {formatCurrency(estadoResultados.utilidadNeta)}
                 </span>
               </div>
             </div>
@@ -251,26 +165,26 @@ const DashboardContable = () => {
         <div className="card">
           <div className="card-header">
             <h2>Balance General</h2>
-            <span className="text-muted">Al {formatDate(balance.fecha)}</span>
+            <span className="text-muted">Al {formatDate(balance.fecha.toString())}</span>
           </div>
           <div className="card-body">
             <div className="balance-summary">
               <div className="balance-column">
                 <h3>Activos</h3>
                 <div className="balance-total">
-                  {formatCurrency(balance.activos.total)}
+                  {formatCurrency(balance.totalActivos)}
                 </div>
                 <div className="balance-items">
-                  {balance.activos.cuentas.slice(0, 5).map((cuenta) => (
+                  {balance.activos.slice(0, 5).map((cuenta) => (
                     <div key={cuenta.id} className="balance-item">
                       <span className="item-label">{cuenta.nombre}</span>
                       <span className="item-value">{formatCurrency(cuenta.saldo)}</span>
                     </div>
                   ))}
-                  {balance.activos.cuentas.length > 5 && (
+                  {balance.activos.length > 5 && (
                     <div className="balance-item more">
                       <span className="text-muted">
-                        y {balance.activos.cuentas.length - 5} cuentas más...
+                        y {balance.activos.length - 5} cuentas más...
                       </span>
                     </div>
                   )}
@@ -280,12 +194,12 @@ const DashboardContable = () => {
               <div className="balance-column">
                 <h3>Pasivos y Patrimonio</h3>
                 <div className="balance-total">
-                  {formatCurrency(balance.totales.pasivosYPatrimonio)}
+                  {formatCurrency(balance.totalPasivos + balance.totalPatrimonio)}
                 </div>
                 <div className="balance-items">
                   <div className="balance-section">
                     <h4>Pasivos</h4>
-                    {balance.pasivos.cuentas.slice(0, 3).map((cuenta) => (
+                    {balance.pasivos.slice(0, 3).map((cuenta) => (
                       <div key={cuenta.id} className="balance-item">
                         <span className="item-label">{cuenta.nombre}</span>
                         <span className="item-value">{formatCurrency(cuenta.saldo)}</span>
@@ -294,18 +208,12 @@ const DashboardContable = () => {
                   </div>
                   <div className="balance-section">
                     <h4>Patrimonio</h4>
-                    {balance.patrimonio.cuentas.slice(0, 2).map((cuenta) => (
+                    {balance.patrimonio.slice(0, 2).map((cuenta) => (
                       <div key={cuenta.id} className="balance-item">
                         <span className="item-label">{cuenta.nombre}</span>
                         <span className="item-value">{formatCurrency(cuenta.saldo)}</span>
                       </div>
                     ))}
-                    <div className="balance-item">
-                      <span className="item-label">Resultado del Ejercicio</span>
-                      <span className="item-value">
-                        {formatCurrency(balance.patrimonio.resultadoEjercicio)}
-                      </span>
-                    </div>
                   </div>
                 </div>
               </div>
