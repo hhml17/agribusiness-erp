@@ -17,6 +17,12 @@ import centroCostoRoutes from './routes/centroCosto.routes';
 import asientoContableRoutes from './routes/asientoContable.routes';
 import reportesRoutes from './routes/reportes.routes';
 
+// Import routes - Payment Module
+import cuentaBancariaRoutes from './routes/cuentaBancaria.routes';
+import ordenCompraRoutes from './routes/ordenCompra.routes';
+import facturaCompraRoutes from './routes/facturaCompra.routes';
+import ordenPagoRoutes from './routes/ordenPago.routes';
+
 // Load environment variables
 dotenv.config();
 
@@ -78,7 +84,12 @@ app.get('/api', (req, res) => {
             planCuentas: '/api/plan-cuentas',
             centrosCosto: '/api/centros-costo',
             asientos: '/api/asientos',
-            reportes: '/api/reportes'
+            reportes: '/api/reportes',
+            // Payment Module
+            cuentasBancarias: '/api/cuentas-bancarias',
+            ordenesCompra: '/api/ordenes-compra',
+            facturasCompra: '/api/facturas-compra',
+            ordenesPago: '/api/ordenes-pago'
         }
     });
 });
@@ -96,6 +107,12 @@ app.use('/api/plan-cuentas', planCuentasRoutes);
 app.use('/api/centros-costo', centroCostoRoutes);
 app.use('/api/asientos', asientoContableRoutes);
 app.use('/api/reportes', reportesRoutes);
+
+// Mount routes - Payment Module
+app.use('/api/cuentas-bancarias', cuentaBancariaRoutes);
+app.use('/api/ordenes-compra', ordenCompraRoutes);
+app.use('/api/facturas-compra', facturaCompraRoutes);
+app.use('/api/ordenes-pago', ordenPagoRoutes);
 
 // ==========================================
 // ERROR HANDLING
