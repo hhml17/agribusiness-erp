@@ -43,9 +43,7 @@ export const getOrdenesPago = async (req: Request, res: Response) => {
           proveedor: true,
           facturaCompra: true,
           cuentaBancaria: true,
-          retenciones: {
-            where: { activo: true },
-          },
+          retenciones: true,
         },
         orderBy: { fecha: 'desc' },
         skip,
@@ -93,12 +91,8 @@ export const getOrdenPagoById = async (req: Request, res: Response) => {
           },
         },
         cuentaBancaria: true,
-        retenciones: {
-          where: { activo: true },
-        },
-        movimientos: {
-          where: { activo: true },
-        },
+        retenciones: true,
+        movimientos: true,
         asientoContable: {
           include: {
             detalles: {
@@ -212,9 +206,11 @@ export const createOrdenPago = async (req: Request, res: Response) => {
               create: retenciones.map((ret: any) => ({
                 tenantId,
                 tipo: ret.tipo,
-                descripcion: ret.descripcion,
+                observaciones: ret.descripcion,
                 monto: ret.monto,
                 numeroComprobante: ret.numeroComprobante,
+                porcentaje: ret.porcentaje,
+                rucBeneficiario: ret.rucBeneficiario,
               })),
             }
           : undefined,
@@ -519,11 +515,12 @@ export const marcarComoPagada = async (req: Request, res: Response) => {
         data: {
           tenantId,
           cuentaBancariaId: orden.cuentaBancariaId,
-          tipo: 'EGRESO',
+          tipo: orden.metodoPago === 'CHEQUE' || orden.metodoPago === 'CHEQUE_DIFERIDO' ? 'CHEQUE' : 'TRANSFERENCIA',
+          naturaleza: 'EGRESO',
           fecha: fechaPago ? new Date(fechaPago) : new Date(),
           descripcion: `Pago OP ${orden.numero} - ${orden.beneficiario}`,
           monto: orden.montoNeto,
-          numeroCheque,
+          numeroReferencia: numeroCheque,
           ordenPagoId: orden.id,
           estado: 'PENDIENTE',
         },
@@ -560,15 +557,13 @@ export const marcarComoPagada = async (req: Request, res: Response) => {
     // Si hay factura asociada, actualizar su estado de pago
     if (orden.facturaCompraId) {
       const factura = orden.facturaCompra!;
-      const nuevoMontoPagado = (factura.montoPagado || 0) + orden.montoNeto;
-      const saldoPendiente = factura.total - nuevoMontoPagado;
+      const saldoPendiente = factura.saldoPendiente - orden.montoNeto;
 
       await prisma.facturaCompra.update({
         where: { id: orden.facturaCompraId },
         data: {
-          montoPagado: nuevoMontoPagado,
           saldoPendiente,
-          estado: saldoPendiente <= 0 ? 'PAGADA' : 'PAGO_PARCIAL',
+          estado: saldoPendiente <= 0 ? 'PAGADA_TOTAL' : 'PAGADA_PARCIAL',
         },
       });
     }

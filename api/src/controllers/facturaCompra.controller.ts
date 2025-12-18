@@ -44,9 +44,7 @@ export const getFacturasCompra = async (req: Request, res: Response) => {
         include: {
           proveedor: true,
           ordenCompra: true,
-          ordenesPago: {
-            where: { activo: true },
-          },
+          ordenesPago: true,
         },
         orderBy: { fecha: 'desc' },
         skip,
@@ -96,7 +94,6 @@ export const getFacturaCompraById = async (req: Request, res: Response) => {
           },
         },
         ordenesPago: {
-          where: { activo: true },
           include: {
             cuentaBancaria: true,
           },
@@ -149,8 +146,8 @@ export const createFacturaCompra = async (req: Request, res: Response) => {
     const existente = await prisma.facturaCompra.findFirst({
       where: {
         tenantId,
-        numeroFactura,
-        timbrado,
+        numero: numeroFactura,
+        timbrado: timbrado || undefined,
       },
     });
 
@@ -185,7 +182,7 @@ export const createFacturaCompra = async (req: Request, res: Response) => {
     const factura = await prisma.facturaCompra.create({
       data: {
         tenantId,
-        numeroFactura,
+        numero: numeroFactura,
         timbrado,
         fecha: new Date(fecha),
         fechaVencimiento: fechaVencimiento ? new Date(fechaVencimiento) : null,
@@ -195,9 +192,12 @@ export const createFacturaCompra = async (req: Request, res: Response) => {
         descripcion,
         observaciones,
         subtotal,
-        iva: iva || 0,
+        iva10: iva || 0,
+        iva5: 0,
+        exentas: 0,
         total,
         estado: 'PENDIENTE',
+        saldoPendiente: total,
       },
       include: {
         proveedor: true,
@@ -260,15 +260,16 @@ export const updateFacturaCompra = async (req: Request, res: Response) => {
     const facturaActualizada = await prisma.facturaCompra.update({
       where: { id },
       data: {
-        numeroFactura,
+        numero: numeroFactura,
         timbrado,
         fecha: fecha ? new Date(fecha) : undefined,
         fechaVencimiento: fechaVencimiento ? new Date(fechaVencimiento) : null,
         descripcion,
         observaciones,
         subtotal,
-        iva,
+        iva10: iva,
         total,
+        saldoPendiente: total,
       },
       include: {
         proveedor: true,
@@ -310,20 +311,18 @@ export const marcarPago = async (req: Request, res: Response) => {
       });
     }
 
-    const nuevoMontoPagado = (factura.montoPagado || 0) + montoPagado;
-    const saldoPendiente = factura.total - nuevoMontoPagado;
+    const saldoPendiente = factura.saldoPendiente - montoPagado;
 
     let nuevoEstado = factura.estado;
     if (saldoPendiente <= 0) {
-      nuevoEstado = 'PAGADA';
-    } else if (nuevoMontoPagado > 0) {
-      nuevoEstado = 'PAGO_PARCIAL';
+      nuevoEstado = 'PAGADA_TOTAL';
+    } else if (montoPagado > 0) {
+      nuevoEstado = 'PAGADA_PARCIAL';
     }
 
     const facturaActualizada = await prisma.facturaCompra.update({
       where: { id },
       data: {
-        montoPagado: nuevoMontoPagado,
         saldoPendiente,
         estado: nuevoEstado,
       },
