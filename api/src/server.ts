@@ -23,6 +23,12 @@ import ordenCompraRoutes from './routes/ordenCompra.routes.js';
 import facturaCompraRoutes from './routes/facturaCompra.routes.js';
 import ordenPagoRoutes from './routes/ordenPago.routes.js';
 
+// Import routes - Actores y Empresa Module
+import actoresRoutes from './routes/actores.routes.js';
+import estanciasRoutes from './routes/estancias.routes.js';
+import talonariosRoutes from './routes/talonarios.routes.js';
+import facturasEmitidasRoutes from './routes/facturasEmitidas.routes.js';
+
 // Load environment variables
 dotenv.config();
 
@@ -58,13 +64,31 @@ app.use((req, res, next) => {
 // ROUTES
 // ==========================================
 
-// Health check
-app.get('/health', (req, res) => {
-    res.json({
+// Health check with database connection test
+app.get('/health', async (req, res) => {
+    const health = {
         status: 'ok',
         timestamp: new Date().toISOString(),
-        uptime: process.uptime()
-    });
+        uptime: process.uptime(),
+        database: {
+            connected: false,
+            message: ''
+        }
+    };
+
+    try {
+        // Test database connection with a simple query
+        await prisma.$queryRaw`SELECT 1 as test`;
+        health.database.connected = true;
+        health.database.message = 'Database connected successfully';
+    } catch (error: any) {
+        health.status = 'error';
+        health.database.connected = false;
+        health.database.message = `Database connection failed: ${error.message}`;
+    }
+
+    const statusCode = health.database.connected ? 200 : 503;
+    res.status(statusCode).json(health);
 });
 
 // API routes
@@ -89,7 +113,12 @@ app.get('/api', (req, res) => {
             cuentasBancarias: '/api/cuentas-bancarias',
             ordenesCompra: '/api/ordenes-compra',
             facturasCompra: '/api/facturas-compra',
-            ordenesPago: '/api/ordenes-pago'
+            ordenesPago: '/api/ordenes-pago',
+            // Actores y Empresa Module
+            actores: '/api/actores',
+            estancias: '/api/estancias',
+            talonarios: '/api/talonarios',
+            facturasEmitidas: '/api/facturas-emitidas'
         }
     });
 });
@@ -113,6 +142,12 @@ app.use('/api/cuentas-bancarias', cuentaBancariaRoutes);
 app.use('/api/ordenes-compra', ordenCompraRoutes);
 app.use('/api/facturas-compra', facturaCompraRoutes);
 app.use('/api/ordenes-pago', ordenPagoRoutes);
+
+// Mount routes - Actores y Empresa Module
+app.use('/api/actores', actoresRoutes);
+app.use('/api/estancias', estanciasRoutes);
+app.use('/api/talonarios', talonariosRoutes);
+app.use('/api/facturas-emitidas', facturasEmitidasRoutes);
 
 // ==========================================
 // ERROR HANDLING

@@ -30,9 +30,6 @@ export default defineConfig({
         target: 'http://localhost:3001',
         changeOrigin: true
       }
-    },
-    headers: {
-      'Content-Type': 'text/javascript; charset=utf-8'
     }
   },
   base: '/',

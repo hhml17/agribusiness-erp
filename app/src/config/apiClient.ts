@@ -21,7 +21,12 @@ const apiClient: AxiosInstance = axios.create({
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     // Get auth token from sessionStorage (set by MSAL)
-    const token = sessionStorage.getItem('msal.accessToken');
+    let token = sessionStorage.getItem('msal.accessToken');
+
+    // In dev mode, use a mock token if no real token exists
+    if (!token && import.meta.env.VITE_DEV_MODE === 'true') {
+      token = 'dev-mode-token';
+    }
 
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;

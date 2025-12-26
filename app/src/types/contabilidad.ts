@@ -111,7 +111,7 @@ export type TipoDocumento = 'FACTURA_COMPRA' | 'FACTURA_VENTA' | 'PAGO' | 'COBRO
 // ==========================================
 
 export interface BalanceGeneral {
-  fecha: string | Date;
+  fecha: string;
   activos: CuentaConSaldo[];
   pasivos: CuentaConSaldo[];
   patrimonio: CuentaConSaldo[];
@@ -120,38 +120,28 @@ export interface BalanceGeneral {
   totalPatrimonio: number;
 }
 
+export interface CuentaEstadoResultados {
+  id: string;
+  codigo: string;
+  nombre: string;
+  tipo: string;
+  nivel: number;
+  centroCosto?: string;
+  tipoGasto?: string;
+  variabilidad?: string;
+  total: number;
+  debe: number;
+  haber: number;
+}
+
 export interface EstadoResultados {
-  fechaDesde: string | Date;
-  fechaHasta: string | Date;
-  ingresos: Array<{
-    id: string;
-    codigo: string;
-    nombre: string;
-    tipo: string;
-    nivel: number;
-    centroCosto?: string;
-    tipoGasto?: string;
-    variabilidad?: string;
-    total: number;
-    debe: number;
-    haber: number;
-  }>;
-  gastos: Array<{
-    id: string;
-    codigo: string;
-    nombre: string;
-    tipo: string;
-    nivel: number;
-    centroCosto?: string;
-    tipoGasto?: string;
-    variabilidad?: string;
-    total: number;
-    debe: number;
-    haber: number;
-  }>;
+  ingresos: CuentaEstadoResultados[];
+  gastos: CuentaEstadoResultados[];
   totalIngresos: number;
   totalGastos: number;
   utilidadNeta: number;
+  fechaDesde: string;
+  fechaHasta: string;
 }
 
 export interface LibroMayor {

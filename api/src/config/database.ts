@@ -4,7 +4,9 @@
  */
 import { PrismaClient } from '@prisma/client';
 
-export const prisma = new PrismaClient();
+export const prisma = new PrismaClient({
+  log: process.env.NODE_ENV === 'development' ? ['query', 'info', 'warn', 'error'] : ['error'],
+});
 
 // Manejo de señales para cierre elegante (CRÍTICO para Azure)
 const gracefulShutdown = async (signal: string) => {

@@ -133,17 +133,17 @@ const BalanceGeneral = () => {
       <div className="balance-summary-cards">
         <div className="summary-card positive">
           <div className="summary-label">Total Activos</div>
-          <div className="summary-value">{formatCurrency(balance.totales.activos)}</div>
+          <div className="summary-value">{formatCurrency(balance.totalActivos)}</div>
         </div>
         <div className="summary-card">
           <div className="summary-label">Total Pasivos + Patrimonio</div>
-          <div className="summary-value">{formatCurrency(balance.totales.pasivosYPatrimonio)}</div>
+          <div className="summary-value">{formatCurrency(balance.totalPasivos + balance.totalPatrimonio)}</div>
         </div>
-        <div className={`summary-card ${balance.totales.balanceado ? 'success' : 'danger'}`}>
+        <div className={`summary-card ${Math.abs(balance.totalActivos - (balance.totalPasivos + balance.totalPatrimonio)) < 0.01 ? 'success' : 'danger'}`}>
           <div className="summary-label">Diferencia</div>
-          <div className="summary-value">{formatCurrency(balance.totales.diferencia)}</div>
+          <div className="summary-value">{formatCurrency(balance.totalActivos - (balance.totalPasivos + balance.totalPatrimonio))}</div>
           <div className="summary-status">
-            {balance.totales.balanceado ? '✓ Balanceado' : '⚠️ No balanceado'}
+            {Math.abs(balance.totalActivos - (balance.totalPasivos + balance.totalPatrimonio)) < 0.01 ? '✓ Balanceado' : '⚠️ No balanceado'}
           </div>
         </div>
       </div>
@@ -166,7 +166,7 @@ const BalanceGeneral = () => {
                 </tr>
               </thead>
               <tbody>
-                {balance.activos.cuentas.map((cuenta) => (
+                {balance.activos.map((cuenta) => (
                   <tr key={cuenta.id} className={`nivel-${cuenta.nivel}`}>
                     <td className="cuenta-codigo">{cuenta.codigo}</td>
                     <td className="cuenta-nombre">{cuenta.nombre}</td>
@@ -177,7 +177,7 @@ const BalanceGeneral = () => {
               <tfoot>
                 <tr className="total-row">
                   <td colSpan={2}>TOTAL ACTIVOS</td>
-                  <td className="text-right">{formatCurrency(balance.activos.total)}</td>
+                  <td className="text-right">{formatCurrency(balance.totalActivos)}</td>
                 </tr>
               </tfoot>
             </table>
@@ -202,7 +202,7 @@ const BalanceGeneral = () => {
                 <tr className="section-header">
                   <td colSpan={3}>PASIVOS</td>
                 </tr>
-                {balance.pasivos.cuentas.map((cuenta) => (
+                {balance.pasivos.map((cuenta) => (
                   <tr key={cuenta.id} className={`nivel-${cuenta.nivel}`}>
                     <td className="cuenta-codigo">{cuenta.codigo}</td>
                     <td className="cuenta-nombre">{cuenta.nombre}</td>
@@ -211,34 +211,29 @@ const BalanceGeneral = () => {
                 ))}
                 <tr className="subtotal-row">
                   <td colSpan={2}>Total Pasivos</td>
-                  <td className="text-right">{formatCurrency(balance.pasivos.total)}</td>
+                  <td className="text-right">{formatCurrency(balance.totalPasivos)}</td>
                 </tr>
 
                 {/* PATRIMONIO */}
                 <tr className="section-header">
                   <td colSpan={3}>PATRIMONIO</td>
                 </tr>
-                {balance.patrimonio.cuentas.map((cuenta) => (
+                {balance.patrimonio.map((cuenta) => (
                   <tr key={cuenta.id} className={`nivel-${cuenta.nivel}`}>
                     <td className="cuenta-codigo">{cuenta.codigo}</td>
                     <td className="cuenta-nombre">{cuenta.nombre}</td>
                     <td className="text-right">{formatCurrency(cuenta.saldo)}</td>
                   </tr>
                 ))}
-                <tr className={`resultado-row ${balance.patrimonio.resultadoEjercicio >= 0 ? 'positive' : 'negative'}`}>
-                  <td className="cuenta-codigo">-</td>
-                  <td className="cuenta-nombre">Resultado del Ejercicio</td>
-                  <td className="text-right">{formatCurrency(balance.patrimonio.resultadoEjercicio)}</td>
-                </tr>
                 <tr className="subtotal-row">
                   <td colSpan={2}>Total Patrimonio</td>
-                  <td className="text-right">{formatCurrency(balance.patrimonio.total)}</td>
+                  <td className="text-right">{formatCurrency(balance.totalPatrimonio)}</td>
                 </tr>
               </tbody>
               <tfoot>
                 <tr className="total-row">
                   <td colSpan={2}>TOTAL PASIVOS + PATRIMONIO</td>
-                  <td className="text-right">{formatCurrency(balance.totales.pasivosYPatrimonio)}</td>
+                  <td className="text-right">{formatCurrency(balance.totalPasivos + balance.totalPatrimonio)}</td>
                 </tr>
               </tfoot>
             </table>

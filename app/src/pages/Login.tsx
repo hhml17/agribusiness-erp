@@ -1,9 +1,20 @@
 import { useMsal } from '@azure/msal-react';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { loginRequest } from '../config/authConfig';
 import '../styles/Login.css';
 
 export default function Login() {
-    const { instance } = useMsal();
+    const { instance, accounts } = useMsal();
+    const navigate = useNavigate();
+
+    // Redirect to dashboard if already authenticated
+    useEffect(() => {
+        if (accounts.length > 0) {
+            console.log('Usuario ya autenticado, redirigiendo al dashboard...');
+            navigate('/dashboard');
+        }
+    }, [accounts, navigate]);
 
     const handleLogin = async () => {
         try {

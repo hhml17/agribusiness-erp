@@ -76,7 +76,7 @@ const EstadoResultados = () => {
         <div>
           <h1 className="page-title">Estado de Resultados</h1>
           <p className="page-subtitle">
-            {formatDate(estado.periodo.desde)} - {formatDate(estado.periodo.hasta)}
+            {formatDate(estado.fechaDesde)} - {formatDate(estado.fechaHasta)}
           </p>
         </div>
         <div className="page-actions">
@@ -130,16 +130,16 @@ const EstadoResultados = () => {
       <div className="grid grid-3 mb-3">
         <div className="metric-card">
           <div className="metric-label">Ingresos Totales</div>
-          <div className="metric-value positive">{formatCurrency(estado.ingresos.total)}</div>
+          <div className="metric-value positive">{formatCurrency(estado.totalIngresos)}</div>
         </div>
         <div className="metric-card">
           <div className="metric-label">Gastos Totales</div>
-          <div className="metric-value negative">{formatCurrency(estado.gastos.total)}</div>
+          <div className="metric-value negative">{formatCurrency(estado.totalGastos)}</div>
         </div>
         <div className="metric-card">
-          <div className="metric-label">{estado.resultado.tipo}</div>
-          <div className={`metric-value ${estado.resultado.utilidadNeta >= 0 ? 'positive' : 'negative'}`}>
-            {formatCurrency(estado.resultado.utilidadNeta)}
+          <div className="metric-label">{estado.utilidadNeta >= 0 ? 'UTILIDAD' : 'PÉRDIDA'}</div>
+          <div className={`metric-value ${estado.utilidadNeta >= 0 ? 'positive' : 'negative'}`}>
+            {formatCurrency(estado.utilidadNeta)}
           </div>
         </div>
       </div>
@@ -164,18 +164,18 @@ const EstadoResultados = () => {
                   INGRESOS
                 </td>
               </tr>
-              {estado.ingresos.cuentas.map((cuenta) => (
+              {estado.ingresos.map((cuenta) => (
                 <tr key={cuenta.id} className={`nivel-${cuenta.nivel}`}>
                   <td className="text-sm" style={{fontFamily: 'monospace', color: '#3b82f6'}}>{cuenta.codigo}</td>
                   <td>{cuenta.nombre}</td>
                   <td className="text-right">{formatCurrency(cuenta.debe)}</td>
                   <td className="text-right">{formatCurrency(cuenta.haber)}</td>
-                  <td className="text-right font-semibold">{formatCurrency(cuenta.saldo)}</td>
+                  <td className="text-right font-semibold">{formatCurrency(cuenta.total)}</td>
                 </tr>
               ))}
               <tr style={{background: '#f3f4f6', fontWeight: 700}}>
                 <td colSpan={4}>Total Ingresos</td>
-                <td className="text-right" style={{color: '#10b981'}}>{formatCurrency(estado.ingresos.total)}</td>
+                <td className="text-right" style={{color: '#10b981'}}>{formatCurrency(estado.totalIngresos)}</td>
               </tr>
 
               {/* GASTOS */}
@@ -184,27 +184,27 @@ const EstadoResultados = () => {
                   GASTOS
                 </td>
               </tr>
-              {estado.gastos.cuentas.map((cuenta) => (
+              {estado.gastos.map((cuenta) => (
                 <tr key={cuenta.id} className={`nivel-${cuenta.nivel}`}>
                   <td className="text-sm" style={{fontFamily: 'monospace', color: '#3b82f6'}}>{cuenta.codigo}</td>
                   <td>{cuenta.nombre}</td>
                   <td className="text-right">{formatCurrency(cuenta.debe)}</td>
                   <td className="text-right">{formatCurrency(cuenta.haber)}</td>
-                  <td className="text-right font-semibold">{formatCurrency(cuenta.saldo)}</td>
+                  <td className="text-right font-semibold">{formatCurrency(cuenta.total)}</td>
                 </tr>
               ))}
               <tr style={{background: '#f3f4f6', fontWeight: 700}}>
                 <td colSpan={4}>Total Gastos</td>
-                <td className="text-right" style={{color: '#ef4444'}}>{formatCurrency(estado.gastos.total)}</td>
+                <td className="text-right" style={{color: '#ef4444'}}>{formatCurrency(estado.totalGastos)}</td>
               </tr>
 
               {/* RESULTADO */}
               <tr style={{background: '#1f2937', color: 'white', fontWeight: 700, fontSize: '1.1rem'}}>
                 <td colSpan={4} style={{padding: '1.25rem'}}>
-                  {estado.resultado.tipo === 'UTILIDAD' ? 'UTILIDAD NETA' : 'PÉRDIDA NETA'}
+                  {estado.utilidadNeta >= 0 ? 'UTILIDAD NETA' : 'PÉRDIDA NETA'}
                 </td>
                 <td className="text-right" style={{padding: '1.25rem'}}>
-                  {formatCurrency(estado.resultado.utilidadNeta)}
+                  {formatCurrency(estado.utilidadNeta)}
                 </td>
               </tr>
             </tbody>

@@ -44,21 +44,26 @@ export async function validateTenant(
 
         // If user is authenticated, verify they have access to this tenant
         if (req.user) {
-            const usuario = await prisma.usuario.findFirst({
-                where: {
-                    azureAdId: req.user.oid,
-                    tenantId: tenantId,
-                    activo: true
+            // In development mode, bypass user validation
+            if (process.env.NODE_ENV === 'development') {
+                req.userRole = 'ADMIN'; // Grant admin role in dev mode
+            } else {
+                const usuario = await prisma.usuario.findFirst({
+                    where: {
+                        azureAdId: req.user.oid,
+                        tenantId: tenantId,
+                        activo: true
+                    }
+                });
+
+                if (!usuario) {
+                    res.status(403).json({ error: 'User does not have access to this tenant' });
+                    return;
                 }
-            });
 
-            if (!usuario) {
-                res.status(403).json({ error: 'User does not have access to this tenant' });
-                return;
+                // Store user role for authorization
+                req.userRole = usuario.role;
             }
-
-            // Store user role for authorization
-            req.userRole = usuario.role;
         }
 
         // Store tenant ID in request for use in controllers

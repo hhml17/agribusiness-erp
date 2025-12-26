@@ -4,11 +4,13 @@
 // api/prisma/schema.prisma
 datasource db {
   provider = "sqlserver"
+  url      = env("DATABASE_URL")
 }
 
 generator client {
   provider = "prisma-client-js"
 }
+
 // ==========================================
 // CORE MODELS - Multi-Tenant
 // ==========================================
@@ -51,6 +53,13 @@ model Tenant {
   retenciones          Retencion[]
   movimientosBancarios MovimientoBancario[]
   extractosBancarios   ExtractoBancario[]
+
+  // Relations - Actores y Empresa
+  actores               Actor[]
+  actorCuentasContables ActorCuentaContable[]
+  estanciasMejoradas    EstanciaMejorada[]
+  talonarios            Talonario[]
+  facturasEmitidas      FacturaEmitida[]
 
   @@map("tenants")
 }
@@ -395,6 +404,7 @@ model PlanCuentas {
   // Relations
   lineasAsiento    LineaAsiento[]
   cuentasBancarias CuentaBancaria[]
+  actorCuentas     ActorCuentaContable[] @relation("ActorCuentas")
 
   @@unique([tenantId, codigo])
   @@index([tenantId, tipo])
@@ -416,8 +426,9 @@ model CentroCosto {
   updatedAt   DateTime @updatedAt
 
   // Relations
-  cuentas       PlanCuentas[]
-  lineasAsiento LineaAsiento[]
+  cuentas            PlanCuentas[]
+  lineasAsiento      LineaAsiento[]
+  estanciasMejoradas EstanciaMejorada[]
 
   @@unique([tenantId, codigo])
   @@map("centros_costo")
@@ -873,4 +884,251 @@ model LineaExtractoBancario {
   updatedAt DateTime @updatedAt
 
   @@map("lineas_extracto_bancario")
+}
+
+// ==========================================
+// MÓDULO DE ACTORES (Personas Físicas y Jurídicas)
+// ==========================================
+
+// ACTOR - Persona Física o Jurídica que puede ser Cliente, Proveedor o Asociado
+model Actor {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  // Tipo de Persona
+  tipoPersona String // FISICA, JURIDICA
+
+  // Identificación (OBLIGATORIOS según requerimientos)
+  tipoDocumento   String // RUC, CI, PASAPORTE, OTRO
+  numeroDocumento String // Número del documento
+  dv              String? // Dígito verificador (para RUC)
+  nombre          String // Nombre completo (persona física) o Denominación social (jurídica)
+  nombreFantasia  String // Nombre comercial o apodo
+
+  // Datos adicionales persona física
+  apellido        String?
+  fechaNacimiento DateTime?
+  estadoCivil     String? // SOLTERO, CASADO, DIVORCIADO, VIUDO
+
+  // Datos adicionales persona jurídica
+  razonSocial        String?
+  fechaConstitucion  DateTime?
+  representanteLegal String?
+
+  // Contacto
+  email        String?
+  telefono     String?
+  celular      String?
+  direccion    String?
+  ciudad       String?
+  departamento String?
+  pais         String  @default("PY")
+
+  // Roles (puede tener múltiples roles simultáneamente)
+  esCliente   Boolean @default(false)
+  esProveedor Boolean @default(false)
+  esAsociado  Boolean @default(false)
+
+  // Estado
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  cuentasContablesPorRol ActorCuentaContable[]
+
+  @@unique([tenantId, numeroDocumento])
+  @@index([tenantId, tipoPersona])
+  @@index([tenantId, esCliente])
+  @@index([tenantId, esProveedor])
+  @@index([tenantId, esAsociado])
+  @@map("actores")
+}
+
+// ACTOR CUENTA CONTABLE - Configuración contable por rol y moneda
+model ActorCuentaContable {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  actorId String
+  actor   Actor  @relation(fields: [actorId], references: [id], onDelete: Cascade)
+
+  // Rol al que aplica esta cuenta
+  rol String // CLIENTE, PROVEEDOR, ASOCIADO
+
+  // Moneda
+  moneda String // USD, PYG
+
+  // Cuenta contable asociada
+  cuentaContableId String
+  cuentaContable   PlanCuentas @relation("ActorCuentas", fields: [cuentaContableId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  // Configuración adicional
+  descripcion String?
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([actorId, rol, moneda])
+  @@index([tenantId])
+  @@index([actorId])
+  @@map("actor_cuentas_contables")
+}
+
+// ==========================================
+// MÓDULO DE EMPRESA - CENTROS DE COSTO MEJORADO
+// ==========================================
+
+// ESTANCIA MEJORADA - Extiende el modelo existente
+model EstanciaMejorada {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  centroCostoId String
+  centroCosto   CentroCosto @relation(fields: [centroCostoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  // Datos de estancia (requerimiento del documento)
+  codigo      String // Código único
+  nombre      String // "Fondo Cría - Estancia Don Federico", "Estancia Vaka Reta"
+  descripcion String?
+
+  // Ubicación
+  direccion    String?
+  ciudad       String?
+  departamento String?
+  pais         String  @default("PY")
+
+  // Datos técnicos
+  superficie     Float? // Hectáreas
+  superficieUtil Float? // Hectáreas útiles para pastoreo
+  capacidadUA    Float? // Unidades Animales
+  tipoPropiedad  String // PROPIA, ALQUILADA, COMPARTIDA
+
+  // Datos de alquiler (si aplica)
+  costoAlquiler    Float?
+  monedaAlquiler   String? // USD, PYG
+  fechaVencimiento DateTime?
+
+  // Responsable
+  responsable String?
+  telefono    String?
+  email       String?
+
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, codigo])
+  @@index([tenantId])
+  @@index([centroCostoId])
+  @@map("estancias_mejoradas")
+}
+
+// ==========================================
+// MÓDULO DE EMPRESA - TALONARIOS
+// ==========================================
+
+// TALONARIO - Control de timbrados para facturación
+model Talonario {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  // Tipo de comprobante
+  tipoComprobante String // FACTURA, NOTA_CREDITO, NOTA_DEBITO, AUTOFACTURA
+
+  // Datos del timbrado (SET Paraguay)
+  numeroTimbrado     String
+  fechaVigenciaDesde DateTime
+  fechaVigenciaHasta DateTime
+
+  // Datos del establecimiento
+  establecimiento String // Código de 3 dígitos "001"
+  puntoVenta      String // Código de 3 dígitos "001"
+
+  // Rango de numeración
+  numeroInicial   Int
+  numeroFinal     Int
+  siguienteNumero Int // Próximo número a usar
+
+  // Configuración
+  descripcion   String?
+  observaciones String?
+
+  // Estado
+  activo    Boolean  @default(true)
+  agotado   Boolean  @default(false) // Se marca cuando siguienteNumero > numeroFinal
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  facturasEmitidas FacturaEmitida[]
+
+  @@unique([tenantId, numeroTimbrado, establecimiento, puntoVenta])
+  @@index([tenantId, tipoComprobante])
+  @@index([tenantId, activo])
+  @@map("talonarios")
+}
+
+// FACTURA EMITIDA - Facturas y notas de crédito emitidas por la empresa
+model FacturaEmitida {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  // Talonario utilizado
+  talonarioId String
+  talonario   Talonario @relation(fields: [talonarioId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  // Número de factura (formato: 001-001-0001234)
+  establecimiento String
+  puntoVenta      String
+  numeroFactura   Int
+  numeroCompleto  String // "001-001-0001234" (generado automáticamente)
+
+  // Tipo
+  tipoComprobante String // FACTURA, NOTA_CREDITO, NOTA_DEBITO
+
+  // Cliente
+  actorId          String?
+  nombreCliente    String // Nombre del cliente (puede no estar en actores)
+  rucCliente       String?
+  direccionCliente String?
+
+  // Fechas
+  fecha            DateTime
+  fechaVencimiento DateTime?
+
+  // Condición de venta
+  condicionVenta String // CONTADO, CREDITO
+
+  // Importes
+  subtotal Float
+  iva10    Float @default(0)
+  iva5     Float @default(0)
+  exentas  Float @default(0)
+  total    Float
+
+  // Moneda
+  moneda String @default("PYG") // PYG, USD
+
+  // Estado
+  estado          String // EMITIDA, ANULADA, NOTA_CREDITO_APLICADA
+  fechaAnulacion  DateTime?
+  motivoAnulacion String?
+
+  // Observaciones
+  descripcion   String?
+  observaciones String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, numeroCompleto])
+  @@index([tenantId, estado])
+  @@index([talonarioId])
+  @@map("facturas_emitidas")
 }
