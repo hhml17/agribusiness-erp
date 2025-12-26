@@ -2,6 +2,62 @@
 
 Sistema ERP completo para gestión de establecimientos ganaderos con módulos de contabilidad, inventario, ventas, compras y gestión de ganado.
 
+## ⚠️ Requisitos Importantes
+
+### Node.js 22 Requerido
+
+Este proyecto **requiere Node.js 22.x o superior**.
+
+```bash
+# Verificar versión actual
+node -v  # Debe mostrar v22.x.x
+
+# Si usas nvm (recomendado):
+nvm use  # Usa automáticamente Node 22 (lee .nvmrc)
+
+# O instalar Node 22:
+nvm install 22
+nvm use 22
+```
+
+## 🚀 Instalación Rápida
+
+### Opción 1: Script Automático (Recomendado)
+
+```bash
+# Desde la raíz del proyecto
+./setup-node22.sh
+```
+
+Este script:
+- ✅ Verifica/cambia a Node.js 22
+- ✅ Instala dependencias del backend
+- ✅ Genera Prisma Client
+- ✅ Compila backend
+- ✅ Instala dependencias del frontend
+- ✅ Compila frontend
+
+### Opción 2: Manual
+
+#### Backend
+
+```bash
+cd api
+npm install
+npm run prisma:generate
+npm run build
+npm run dev  # Para desarrollo
+```
+
+#### Frontend
+
+```bash
+cd app
+npm install
+npm run build
+npm run dev  # Para desarrollo
+```
+
 ## Información del Proyecto
 
 - **Repositorio:** https://github.com/hhml17/agribusiness-erp
@@ -13,17 +69,19 @@ Sistema ERP completo para gestión de establecimientos ganaderos con módulos de
 ## Stack Tecnológico
 
 ### Frontend
-- React 18 + TypeScript
-- Vite (Build tool)
-- MSAL (Microsoft Authentication Library)
-- Axios (HTTP client)
-- React Router (Routing)
+- **Node.js:** 22.x LTS
+- **React:** 19.x + TypeScript
+- **Vite:** 7.x (Build tool)
+- **MSAL:** Browser/React (Microsoft Authentication)
+- **Axios:** 1.x (HTTP client)
+- **React Router:** 7.x (Routing)
 
 ### Backend
-- Node.js + Express
-- Prisma ORM
-- TypeScript
-- JWT Authentication
+- **Node.js:** 22.x LTS
+- **Express:** 5.x
+- **Prisma:** 7.x ORM
+- **TypeScript:** 5.9.x
+- **ESM:** Native ES Modules
 
 ### Base de Datos
 - Azure SQL Server (Brazil South)

@@ -1,7 +1,6 @@
 // Prisma Schema - Agribusiness ERP
 // Multi-tenant architecture with row-level security
 
-
 // api/prisma/schema.prisma
 datasource db {
   provider = "sqlserver"
