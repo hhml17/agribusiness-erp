@@ -11,7 +11,7 @@ import {
   contabilizarAsiento,
   anularAsiento,
   deleteAsiento,
-} from '../controllers/asientoContable.controller';
+} from '../controllers/asientoContable.controller.js';
 
 const router = Router();
 

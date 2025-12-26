@@ -13,7 +13,7 @@ import {
   getChequeras,
   createChequera,
   getCheques,
-} from '../controllers/cuentaBancaria.controller';
+} from '../controllers/cuentaBancaria.controller.js';
 
 const router = Router();
 

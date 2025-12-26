@@ -4,7 +4,7 @@
  */
 
 import { Request, Response } from 'express';
-import { prisma } from '../config/database';
+import { prisma } from '../config/database.js';
 
 // GET /api/plan-cuentas - Obtener todas las cuentas
 export const getPlanCuentas = async (req: Request, res: Response) => {

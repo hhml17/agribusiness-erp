@@ -12,7 +12,7 @@ import {
   aprobarOrdenCompra,
   rechazarOrdenCompra,
   anularOrdenCompra,
-} from '../controllers/ordenCompra.controller';
+} from '../controllers/ordenCompra.controller.js';
 
 const router = Router();
 

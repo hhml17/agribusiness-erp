@@ -1,27 +1,27 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { prisma } from './config/database';
+import { prisma } from './config/database.js';
 
 // Import routes - Commercial
-import tenantsRoutes from './routes/tenants.routes';
-import productosRoutes from './routes/productos.routes';
-import clientesRoutes from './routes/clientes.routes';
-import proveedoresRoutes from './routes/proveedores.routes';
-import ventasRoutes from './routes/ventas.routes';
-import comprasRoutes from './routes/compras.routes';
+import tenantsRoutes from './routes/tenants.routes.js';
+import productosRoutes from './routes/productos.routes.js';
+import clientesRoutes from './routes/clientes.routes.js';
+import proveedoresRoutes from './routes/proveedores.routes.js';
+import ventasRoutes from './routes/ventas.routes.js';
+import comprasRoutes from './routes/compras.routes.js';
 
 // Import routes - Accounting
-import planCuentasRoutes from './routes/planCuentas.routes';
-import centroCostoRoutes from './routes/centroCosto.routes';
-import asientoContableRoutes from './routes/asientoContable.routes';
-import reportesRoutes from './routes/reportes.routes';
+import planCuentasRoutes from './routes/planCuentas.routes.js';
+import centroCostoRoutes from './routes/centroCosto.routes.js';
+import asientoContableRoutes from './routes/asientoContable.routes.js';
+import reportesRoutes from './routes/reportes.routes.js';
 
 // Import routes - Payment Module
-import cuentaBancariaRoutes from './routes/cuentaBancaria.routes';
-import ordenCompraRoutes from './routes/ordenCompra.routes';
-import facturaCompraRoutes from './routes/facturaCompra.routes';
-import ordenPagoRoutes from './routes/ordenPago.routes';
+import cuentaBancariaRoutes from './routes/cuentaBancaria.routes.js';
+import ordenCompraRoutes from './routes/ordenCompra.routes.js';
+import facturaCompraRoutes from './routes/facturaCompra.routes.js';
+import ordenPagoRoutes from './routes/ordenPago.routes.js';
 
 // Load environment variables
 dotenv.config();

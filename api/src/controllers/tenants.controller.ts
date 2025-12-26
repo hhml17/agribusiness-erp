@@ -1,6 +1,6 @@
 import { Response } from 'express';
-import { TenantRequest } from '../middleware/tenant';
-import { prisma } from '../server';
+import { TenantRequest } from '../middleware/tenant.js';
+import { prisma } from '../server.js';
 
 /**
  * Get all tenants for the authenticated user

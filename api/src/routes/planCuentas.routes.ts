@@ -10,7 +10,7 @@ import {
   updatePlanCuenta,
   deletePlanCuenta,
   getPlanCuentasTree,
-} from '../controllers/planCuentas.controller';
+} from '../controllers/planCuentas.controller.js';
 
 const router = Router();
 

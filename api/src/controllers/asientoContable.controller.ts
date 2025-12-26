@@ -4,7 +4,7 @@
  */
 
 import { Request, Response } from 'express';
-import { prisma } from '../config/database';
+import { prisma } from '../config/database.js';
 
 // GET /api/asientos - Obtener todos los asientos contables
 export const getAsientos = async (req: Request, res: Response) => {

@@ -1,6 +1,6 @@
 import { Response, NextFunction } from 'express';
-import { AuthRequest } from './auth';
-import { prisma } from '../server';
+import { AuthRequest } from './auth.js';
+import { prisma } from '../server.js';
 
 // Extend AuthRequest to include tenant info
 export interface TenantRequest extends AuthRequest {

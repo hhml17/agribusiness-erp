@@ -9,7 +9,7 @@ import {
   createCentroCosto,
   updateCentroCosto,
   deleteCentroCosto,
-} from '../controllers/centroCosto.controller';
+} from '../controllers/centroCosto.controller.js';
 
 const router = Router();
 

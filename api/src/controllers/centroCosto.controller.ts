@@ -4,7 +4,7 @@
  */
 
 import { Request, Response } from 'express';
-import { prisma } from '../config/database';
+import { prisma } from '../config/database.js';
 
 // GET /api/centros-costo - Obtener todos los centros de costo
 export const getCentrosCosto = async (req: Request, res: Response) => {

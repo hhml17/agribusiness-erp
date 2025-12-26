@@ -8,7 +8,7 @@ import {
   getEstadoResultados,
   getLibroMayor,
   getReporteCentroCosto,
-} from '../controllers/reportes.controller';
+} from '../controllers/reportes.controller.js';
 
 const router = Router();
 

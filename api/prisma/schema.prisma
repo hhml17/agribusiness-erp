@@ -1,16 +1,15 @@
 // Prisma Schema - Agribusiness ERP
 // Multi-tenant architecture with row-level security
 
+
+// api/prisma/schema.prisma
+datasource db {
+  provider = "sqlserver"
+}
+
 generator client {
   provider = "prisma-client-js"
 }
-
-datasource db {
-  provider          = "sqlserver" // Using Azure SQL Server
-  url               = env("DATABASE_URL")
-  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
-}
-
 // ==========================================
 // CORE MODELS - Multi-Tenant
 // ==========================================

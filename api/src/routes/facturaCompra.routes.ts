@@ -10,7 +10,7 @@ import {
   updateFacturaCompra,
   marcarPago,
   anularFactura,
-} from '../controllers/facturaCompra.controller';
+} from '../controllers/facturaCompra.controller.js';
 
 const router = Router();
 

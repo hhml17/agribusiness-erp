@@ -1,13 +1,13 @@
 import { Router } from 'express';
-import { authenticateToken } from '../middleware/auth';
-import { validateTenant, requireUser } from '../middleware/tenant';
+import { authenticateToken } from '../middleware/auth.js';
+import { validateTenant, requireUser } from '../middleware/tenant.js';
 import {
     getProveedores,
     getProveedor,
     createProveedor,
     updateProveedor,
     deleteProveedor
-} from '../controllers/proveedores.controller';
+} from '../controllers/proveedores.controller.js';
 
 const router = Router();
 

@@ -4,7 +4,7 @@
  */
 
 import { Request, Response } from 'express';
-import { prisma } from '../config/database';
+import { prisma } from '../config/database.js';
 
 // GET /api/cuentas-bancarias - Listar todas las cuentas bancarias
 export const getCuentasBancarias = async (req: Request, res: Response) => {

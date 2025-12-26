@@ -4,7 +4,7 @@
  */
 
 import { Request, Response } from 'express';
-import { prisma } from '../config/database';
+import { prisma } from '../config/database.js';
 
 // GET /api/ordenes-compra - Listar todas las órdenes de compra
 export const getOrdenesCompra = async (req: Request, res: Response) => {

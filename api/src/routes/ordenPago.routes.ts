@@ -13,7 +13,7 @@ import {
   rechazarOrdenPago,
   marcarComoPagada,
   anularOrdenPago,
-} from '../controllers/ordenPago.controller';
+} from '../controllers/ordenPago.controller.js';
 
 const router = Router();
 

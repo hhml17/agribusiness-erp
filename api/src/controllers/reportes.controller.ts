@@ -4,7 +4,7 @@
  */
 
 import { Request, Response } from 'express';
-import { prisma } from '../config/database';
+import { prisma } from '../config/database.js';
 
 // GET /api/reportes/balance - Balance General
 export const getBalanceGeneral = async (req: Request, res: Response) => {

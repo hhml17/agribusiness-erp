@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { authenticateToken } from '../middleware/auth';
-import { validateTenant, requireUser } from '../middleware/tenant';
+import { authenticateToken } from '../middleware/auth.js';
+import { validateTenant, requireUser } from '../middleware/tenant.js';
 import {
     getProductos,
     getProducto,
@@ -8,7 +8,7 @@ import {
     updateProducto,
     deleteProducto,
     getProductosBajoStock
-} from '../controllers/productos.controller';
+} from '../controllers/productos.controller.js';
 
 const router = Router();
 

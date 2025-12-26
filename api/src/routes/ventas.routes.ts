@@ -1,13 +1,13 @@
 import { Router } from 'express';
-import { authenticateToken } from '../middleware/auth';
-import { validateTenant, requireUser } from '../middleware/tenant';
+import { authenticateToken } from '../middleware/auth.js';
+import { validateTenant, requireUser } from '../middleware/tenant.js';
 import {
     getVentas,
     getVenta,
     createVenta,
     updateVenta,
     deleteVenta
-} from '../controllers/ventas.controller';
+} from '../controllers/ventas.controller.js';
 
 const router = Router();
 
