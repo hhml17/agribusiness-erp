@@ -114,6 +114,16 @@ model Producto {
   tenantId String
   tenant   Tenant @relation(fields: [tenantId], references: [id])
 
+  // Cuentas Contables (requeridas)
+  cuentaInventarioId String?
+  cuentaInventario   PlanCuentas? @relation("ProductoInventario", fields: [cuentaInventarioId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  cuentaCostoId String?
+  cuentaCosto   PlanCuentas? @relation("ProductoCosto", fields: [cuentaCostoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  cuentaIngresoId String?
+  cuentaIngreso   PlanCuentas? @relation("ProductoIngreso", fields: [cuentaIngresoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
   // Relations
   ventaItems       VentaItem[]
   compraItems      CompraItem[]
@@ -402,9 +412,12 @@ model PlanCuentas {
   updatedAt        DateTime @updatedAt
 
   // Relations
-  lineasAsiento    LineaAsiento[]
-  cuentasBancarias CuentaBancaria[]
-  actorCuentas     ActorCuentaContable[] @relation("ActorCuentas")
+  lineasAsiento           LineaAsiento[]
+  cuentasBancarias        CuentaBancaria[]
+  actorCuentas            ActorCuentaContable[]  @relation("ActorCuentas")
+  productosInventario     Producto[]             @relation("ProductoInventario")
+  productosCosto          Producto[]             @relation("ProductoCosto")
+  productosIngreso        Producto[]             @relation("ProductoIngreso")
 
   @@unique([tenantId, codigo])
   @@index([tenantId, tipo])
@@ -934,6 +947,10 @@ model Actor {
   activo    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Auditoría
+  createdBy String? // Email del usuario que creó
+  updatedBy String? // Email del usuario que actualizó
 
   // Relations
   cuentasContablesPorRol ActorCuentaContable[]

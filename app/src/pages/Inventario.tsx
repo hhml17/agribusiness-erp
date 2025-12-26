@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Table, Button, Modal, Card, type Column } from '../components';
 import { productosService, type Producto, type CreateProductoInput } from '../services/api';
-import '../styles/pages/Inventario.css';
 
 export function Inventario() {
   const [productos, setProductos] = useState<Producto[]>([]);

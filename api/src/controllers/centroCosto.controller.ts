@@ -3,13 +3,19 @@
  * Gestión de centros de costo para contabilidad agropecuaria
  */
 
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import { TenantRequest } from '../middleware/tenant.js';
 import { prisma } from '../config/database.js';
 
 // GET /api/centros-costo - Obtener todos los centros de costo
-export const getCentrosCosto = async (req: Request, res: Response) => {
+export const getCentrosCosto = async (req: TenantRequest, res: Response) => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string;
+    const tenantId = req.tenantId;
+
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
     const { tipo, activo } = req.query;
 
     const where: any = { tenantId };
@@ -45,10 +51,14 @@ export const getCentrosCosto = async (req: Request, res: Response) => {
 };
 
 // GET /api/centros-costo/:id - Obtener un centro de costo específico
-export const getCentroCostoById = async (req: Request, res: Response) => {
+export const getCentroCostoById = async (req: TenantRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const tenantId = req.headers['x-tenant-id'] as string;
+    const tenantId = req.tenantId;
+
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
 
     const centro = await prisma.centroCosto.findFirst({
       where: { id, tenantId },
@@ -79,12 +89,16 @@ export const getCentroCostoById = async (req: Request, res: Response) => {
 };
 
 // POST /api/centros-costo - Crear nuevo centro de costo
-export const createCentroCosto = async (req: Request, res: Response) => {
+export const createCentroCosto = async (req: TenantRequest, res: Response) => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string;
+    const tenantId = req.tenantId;
     const { codigo, nombre, descripcion, tipo } = req.body;
 
     // Validaciones
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
     if (!codigo || !nombre) {
       return res.status(400).json({
         error: 'Campos requeridos: codigo, nombre',
@@ -118,11 +132,15 @@ export const createCentroCosto = async (req: Request, res: Response) => {
 };
 
 // PUT /api/centros-costo/:id - Actualizar centro de costo
-export const updateCentroCosto = async (req: Request, res: Response) => {
+export const updateCentroCosto = async (req: TenantRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const tenantId = req.headers['x-tenant-id'] as string;
+    const tenantId = req.tenantId;
     const { codigo, nombre, descripcion, tipo, activo } = req.body;
+
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
 
     // Verificar que el centro existe
     const centro = await prisma.centroCosto.findFirst({
@@ -163,10 +181,14 @@ export const updateCentroCosto = async (req: Request, res: Response) => {
 };
 
 // DELETE /api/centros-costo/:id - Desactivar centro de costo (soft delete)
-export const deleteCentroCosto = async (req: Request, res: Response) => {
+export const deleteCentroCosto = async (req: TenantRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const tenantId = req.headers['x-tenant-id'] as string;
+    const tenantId = req.tenantId;
+
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
 
     // Verificar que el centro existe
     const centro = await prisma.centroCosto.findFirst({

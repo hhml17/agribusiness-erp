@@ -14,6 +14,7 @@ import comprasRoutes from './routes/compras.routes.js';
 // Import routes - Accounting
 import planCuentasRoutes from './routes/planCuentas.routes.js';
 import centroCostoRoutes from './routes/centroCosto.routes.js';
+import cuentaContableRoutes from './routes/cuentaContable.routes.js';
 import asientoContableRoutes from './routes/asientoContable.routes.js';
 import reportesRoutes from './routes/reportes.routes.js';
 
@@ -28,6 +29,9 @@ import actoresRoutes from './routes/actores.routes.js';
 import estanciasRoutes from './routes/estancias.routes.js';
 import talonariosRoutes from './routes/talonarios.routes.js';
 import facturasEmitidasRoutes from './routes/facturasEmitidas.routes.js';
+
+// Import routes - Users Module
+import usersRoutes from './routes/users.routes.js';
 
 // Load environment variables
 dotenv.config();
@@ -107,6 +111,7 @@ app.get('/api', (req, res) => {
             // Accounting
             planCuentas: '/api/plan-cuentas',
             centrosCosto: '/api/centros-costo',
+            cuentasContables: '/api/cuentas-contables',
             asientos: '/api/asientos',
             reportes: '/api/reportes',
             // Payment Module
@@ -118,7 +123,9 @@ app.get('/api', (req, res) => {
             actores: '/api/actores',
             estancias: '/api/estancias',
             talonarios: '/api/talonarios',
-            facturasEmitidas: '/api/facturas-emitidas'
+            facturasEmitidas: '/api/facturas-emitidas',
+            // Users Module
+            users: '/api/users'
         }
     });
 });
@@ -134,6 +141,7 @@ app.use('/api/compras', comprasRoutes);
 // Mount routes - Accounting
 app.use('/api/plan-cuentas', planCuentasRoutes);
 app.use('/api/centros-costo', centroCostoRoutes);
+app.use('/api/cuentas-contables', cuentaContableRoutes);
 app.use('/api/asientos', asientoContableRoutes);
 app.use('/api/reportes', reportesRoutes);
 
@@ -148,6 +156,9 @@ app.use('/api/actores', actoresRoutes);
 app.use('/api/estancias', estanciasRoutes);
 app.use('/api/talonarios', talonariosRoutes);
 app.use('/api/facturas-emitidas', facturasEmitidasRoutes);
+
+// Mount routes - Users Module
+app.use('/api/users', usersRoutes);
 
 // ==========================================
 // ERROR HANDLING

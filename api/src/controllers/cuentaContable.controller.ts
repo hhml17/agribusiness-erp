@@ -1,8 +1,8 @@
 import { Response } from 'express';
 import { TenantRequest } from '../middleware/tenant.js';
-import { productoService } from '../services/productos.service.js';
+import { cuentaContableService } from '../services/cuentaContable.service.js';
 
-export const productoController = {
+export const cuentaContableController = {
   async getAll(req: TenantRequest, res: Response) {
     try {
       const tenantId = req.tenantId;
@@ -12,15 +12,15 @@ export const productoController = {
 
       const filters = {
         activo: req.query.activo === 'true' ? true : req.query.activo === 'false' ? false : undefined,
-        categoria: req.query.categoria as string | undefined,
-        search: req.query.search as string | undefined
+        tipo: req.query.tipo as string | undefined,
+        nivel: req.query.nivel ? parseInt(req.query.nivel as string) : undefined
       };
 
-      const productos = await productoService.getAll(tenantId, filters);
-      res.json(productos);
+      const cuentas = await cuentaContableService.getAll(tenantId, filters);
+      res.json(cuentas);
     } catch (error: any) {
-      console.error('Error getting productos:', error);
-      res.status(500).json({ error: 'Error al obtener productos', message: error.message });
+      console.error('Error getting cuentas contables:', error);
+      res.status(500).json({ error: 'Error al obtener cuentas contables', message: error.message });
     }
   },
 
@@ -32,14 +32,14 @@ export const productoController = {
       }
 
       const { id } = req.params;
-      const producto = await productoService.getById(id, tenantId);
-      res.json(producto);
+      const cuenta = await cuentaContableService.getById(id, tenantId);
+      res.json(cuenta);
     } catch (error: any) {
-      console.error('Error getting producto:', error);
-      if (error.message === 'Producto no encontrado') {
+      console.error('Error getting cuenta contable:', error);
+      if (error.message === 'Cuenta contable no encontrada') {
         return res.status(404).json({ error: error.message });
       }
-      res.status(500).json({ error: 'Error al obtener producto', message: error.message });
+      res.status(500).json({ error: 'Error al obtener cuenta contable', message: error.message });
     }
   },
 
@@ -50,20 +50,20 @@ export const productoController = {
         return res.status(401).json({ error: 'No autorizado' });
       }
 
-      const producto = await productoService.create(tenantId, req.body);
-      res.status(201).json(producto);
+      const cuenta = await cuentaContableService.create(tenantId, req.body);
+      res.status(201).json(cuenta);
     } catch (error: any) {
-      console.error('Error creating producto:', error);
+      console.error('Error creating cuenta contable:', error);
 
       if (error.message.includes('ya existe') || error.message.includes('código')) {
         return res.status(409).json({ error: error.message });
       }
 
-      if (error.message.includes('Cuenta') || error.message.includes('nivel')) {
+      if (error.message.includes('no encontrada') || error.message.includes('inactiva') || error.message.includes('nivel')) {
         return res.status(400).json({ error: error.message });
       }
 
-      res.status(500).json({ error: 'Error al crear producto', message: error.message });
+      res.status(500).json({ error: 'Error al crear cuenta contable', message: error.message });
     }
   },
 
@@ -75,20 +75,20 @@ export const productoController = {
       }
 
       const { id } = req.params;
-      const producto = await productoService.update(id, tenantId, req.body);
-      res.json(producto);
+      const cuenta = await cuentaContableService.update(id, tenantId, req.body);
+      res.json(cuenta);
     } catch (error: any) {
-      console.error('Error updating producto:', error);
+      console.error('Error updating cuenta contable:', error);
 
-      if (error.message === 'Producto no encontrado') {
+      if (error.message === 'Cuenta contable no encontrada') {
         return res.status(404).json({ error: error.message });
       }
 
-      if (error.message.includes('Cuenta') || error.message.includes('nivel')) {
+      if (error.message.includes('no encontrado') || error.message.includes('inactiva')) {
         return res.status(400).json({ error: error.message });
       }
 
-      res.status(500).json({ error: 'Error al actualizar producto', message: error.message });
+      res.status(500).json({ error: 'Error al actualizar cuenta contable', message: error.message });
     }
   },
 
@@ -100,20 +100,20 @@ export const productoController = {
       }
 
       const { id } = req.params;
-      await productoService.delete(id, tenantId);
+      await cuentaContableService.delete(id, tenantId);
       res.status(204).send();
     } catch (error: any) {
-      console.error('Error deleting producto:', error);
+      console.error('Error deleting cuenta contable:', error);
 
-      if (error.message === 'Producto no encontrado') {
+      if (error.message === 'Cuenta contable no encontrada') {
         return res.status(404).json({ error: error.message });
       }
 
-      if (error.message.includes('movimientos')) {
+      if (error.message.includes('cuentas hijas') || error.message.includes('movimientos')) {
         return res.status(400).json({ error: error.message });
       }
 
-      res.status(500).json({ error: 'Error al desactivar producto', message: error.message });
+      res.status(500).json({ error: 'Error al desactivar cuenta contable', message: error.message });
     }
   }
 };

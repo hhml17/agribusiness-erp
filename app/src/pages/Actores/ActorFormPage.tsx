@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Button, Card } from '../../components';
+import { Button, Card, Alert, type AlertType } from '../../components';
 import { actoresService } from '../../services/api/actoresService';
 import type { Actor, CreateActorInput, UpdateActorInput } from '../../types/actores';
-import '../../styles/pages/ActorForm.css';
 
 type TabType = 'perfil' | 'contactos' | 'documentos';
 
@@ -15,6 +14,7 @@ export function ActorFormPage() {
   const [activeTab, setActiveTab] = useState<TabType>('perfil');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [alert, setAlert] = useState<{ type: AlertType; message: string } | null>(null);
 
   // Form data
   const [formData, setFormData] = useState<Partial<CreateActorInput>>({
@@ -29,11 +29,11 @@ export function ActorFormPage() {
     esCliente: false,
     esProveedor: false,
     esAsociado: false,
-    fechaFundacion: '',
+    fechaConstitucion: '',
     sectorIndustrial: '',
     categoriaComercial: '',
     nacionalidad: 'Paraguay',
-    paisResidencia: 'Paraguay',
+    pais: 'Paraguay',
     telefono: '',
     email: '',
     direccion: '',
@@ -71,11 +71,11 @@ export function ActorFormPage() {
         esCliente: actor.esCliente,
         esProveedor: actor.esProveedor,
         esAsociado: actor.esAsociado,
-        fechaFundacion: actor.fechaFundacion || '',
+        fechaConstitucion: actor.fechaConstitucion ? new Date(actor.fechaConstitucion).toISOString().split('T')[0] : '',
         sectorIndustrial: actor.sectorIndustrial || '',
         categoriaComercial: actor.categoriaComercial || '',
         nacionalidad: actor.nacionalidad || 'Paraguay',
-        paisResidencia: actor.paisResidencia || 'Paraguay',
+        pais: actor.pais || 'Paraguay',
         telefono: actor.telefono || '',
         email: actor.email || '',
         direccion: actor.direccion || '',
@@ -83,11 +83,21 @@ export function ActorFormPage() {
         codigoPostal: actor.codigoPostal || '',
       });
 
+      // Helper function to format user name from email
+      const formatUserName = (email?: string): string => {
+        if (!email) return 'Sistema';
+        // Extract name from email (before @) and capitalize
+        const name = email.split('@')[0];
+        return name.split('.').map(part =>
+          part.charAt(0).toUpperCase() + part.slice(1)
+        ).join(' ');
+      };
+
       setMetadata({
-        creadoEl: new Date(actor.creadoEl).toLocaleString('es-PY'),
-        creadoPor: actor.creadoPor || 'Sistema',
-        actualizadoEl: new Date(actor.actualizadoEl).toLocaleString('es-PY'),
-        actualizadoPor: actor.actualizadoPor || 'Sistema',
+        creadoEl: actor.createdAt ? new Date(actor.createdAt).toLocaleString('es-PY') : '',
+        creadoPor: formatUserName(actor.createdBy),
+        actualizadoEl: actor.updatedAt ? new Date(actor.updatedAt).toLocaleString('es-PY') : '',
+        actualizadoPor: formatUserName(actor.updatedBy),
       });
     } catch (error) {
       console.error('Error loading actor:', error);
@@ -114,36 +124,93 @@ export function ActorFormPage() {
       return;
     }
 
-    if (!formData.nombre) {
-      alert('El nombre es obligatorio');
-      return;
-    }
-
     if (!formData.nombreFantasia) {
       alert('El nombre fantasía es obligatorio');
       return;
     }
 
-    if (formData.tipoPersona === 'JURIDICA' && !formData.razonSocial) {
-      alert('La razón social es obligatoria para personas jurídicas');
-      return;
+    // Validaciones específicas por tipo de persona
+    if (formData.tipoPersona === 'FISICA') {
+      if (!formData.nombre) {
+        alert('El nombre es obligatorio');
+        return;
+      }
+    } else {
+      // Persona Jurídica
+      if (!formData.razonSocial) {
+        alert('La razón social es obligatoria para personas jurídicas');
+        return;
+      }
+      // Copiar razonSocial a nombre para el backend
+      formData.nombre = formData.razonSocial;
     }
 
     try {
       setSaving(true);
 
-      if (isEditing && id) {
-        await actoresService.update(id, formData as UpdateActorInput);
-        alert('Actor actualizado exitosamente');
-      } else {
-        await actoresService.create(formData as CreateActorInput);
-        alert('Actor creado exitosamente');
-      }
+      // Filter out fields that don't exist in the Prisma schema
+      const {
+        sectorIndustrial,
+        categoriaComercial,
+        nacionalidad,
+        codigoPostal,
+        ...validData
+      } = formData;
 
-      navigate('/actores');
+      // Convert empty strings to undefined for optional fields
+      const cleanData = {
+        ...validData,
+        fechaConstitucion: validData.fechaConstitucion || undefined,
+        fechaNacimiento: validData.fechaNacimiento || undefined,
+        razonSocial: validData.razonSocial || undefined,
+        apellido: validData.apellido || undefined,
+        estadoCivil: validData.estadoCivil || undefined,
+        representanteLegal: validData.representanteLegal || undefined,
+        email: validData.email || undefined,
+        telefono: validData.telefono || undefined,
+        celular: validData.celular || undefined,
+        direccion: validData.direccion || undefined,
+        ciudad: validData.ciudad || undefined,
+        departamento: validData.departamento || undefined,
+      };
+
+      if (isEditing && id) {
+        await actoresService.update(id, cleanData as UpdateActorInput);
+        setAlert({
+          type: 'success',
+          message: 'Persona actualizada exitosamente'
+        });
+        setTimeout(() => navigate('/actores'), 1500);
+      } else {
+        await actoresService.create(cleanData as CreateActorInput);
+        setAlert({
+          type: 'success',
+          message: 'Persona creada exitosamente'
+        });
+        setTimeout(() => navigate('/actores'), 1500);
+      }
     } catch (error: any) {
       console.error('Error saving actor:', error);
-      alert(`Error al guardar: ${error.response?.data?.message || error.message}`);
+
+      // Obtener mensaje de error del servidor
+      const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message;
+
+      // Personalizar mensajes de error comunes
+      let userMessage = errorMessage;
+      if (errorMessage.includes('already exists') || errorMessage.includes('ya existe')) {
+        userMessage = 'Ya existe una persona registrada con este número de documento';
+      } else if (errorMessage.includes('required') || errorMessage.includes('requerido')) {
+        userMessage = 'Por favor complete todos los campos obligatorios';
+      } else if (error.response?.status === 409) {
+        userMessage = 'Ya existe una persona registrada con este número de documento';
+      } else if (error.response?.status === 400) {
+        userMessage = errorMessage || 'Los datos ingresados no son válidos';
+      }
+
+      setAlert({
+        type: 'error',
+        message: userMessage
+      });
     } finally {
       setSaving(false);
     }
@@ -159,9 +226,17 @@ export function ActorFormPage() {
 
   return (
     <div className="page-container">
+      {alert && (
+        <Alert
+          type={alert.type}
+          message={alert.message}
+          onClose={() => setAlert(null)}
+        />
+      )}
+
       <div className="page-header">
-        <h1>{isEditing ? 'Editar Actor' : 'Nuevo Actor'}</h1>
-        <p>Gestión de actor en el sistema. Ya sea cliente, proveedor o asociado</p>
+        <h1>{isEditing ? 'Editar Persona' : 'Nueva Persona'}</h1>
+        <p>Gestión de persona en el sistema. Ya sea cliente, proveedor o asociado</p>
       </div>
 
       <form onSubmit={handleSubmit}>
@@ -395,13 +470,13 @@ export function ActorFormPage() {
                 {formData.tipoPersona === 'JURIDICA' && (
                   <>
                     <div className="form-group">
-                      <label htmlFor="fechaFundacion">Fecha Fundación</label>
+                      <label htmlFor="fechaConstitucion">Fecha Constitución</label>
                       <input
                         type="date"
-                        id="fechaFundacion"
+                        id="fechaConstitucion"
                         className="form-control"
-                        value={formData.fechaFundacion}
-                        onChange={(e) => handleInputChange('fechaFundacion', e.target.value)}
+                        value={formData.fechaConstitucion}
+                        onChange={(e) => handleInputChange('fechaConstitucion', e.target.value)}
                       />
                     </div>
 
@@ -458,12 +533,12 @@ export function ActorFormPage() {
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="paisResidencia">País</label>
+                    <label htmlFor="pais">País</label>
                     <select
-                      id="paisResidencia"
+                      id="pais"
                       className="form-control"
-                      value={formData.paisResidencia}
-                      onChange={(e) => handleInputChange('paisResidencia', e.target.value)}
+                      value={formData.pais}
+                      onChange={(e) => handleInputChange('pais', e.target.value)}
                     >
                       <option value="Paraguay">Paraguay</option>
                       <option value="Argentina">Argentina</option>

@@ -1,56 +1,21 @@
 import { Router } from 'express';
+import { productoController } from '../controllers/productos.controller.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { validateTenant, requireUser } from '../middleware/tenant.js';
-import {
-    getProductos,
-    getProducto,
-    createProducto,
-    updateProducto,
-    deleteProducto,
-    getProductosBajoStock
-} from '../controllers/productos.controller.js';
 
 const router = Router();
 
-// All producto routes require authentication and tenant validation
+// All routes require authentication and tenant validation
 router.use(authenticateToken);
 router.use(validateTenant);
 
-/**
- * GET /api/productos
- * Get all productos for tenant
- * Query params: ?categoria=string&activo=boolean
- */
-router.get('/', getProductos);
+// GET routes - available to all authenticated users
+router.get('/', productoController.getAll);
+router.get('/:id', productoController.getById);
 
-/**
- * GET /api/productos/bajo-stock
- * Get productos with low stock
- */
-router.get('/bajo-stock', getProductosBajoStock);
-
-/**
- * GET /api/productos/:id
- * Get single producto by ID
- */
-router.get('/:id', getProducto);
-
-/**
- * POST /api/productos
- * Create new producto (requires USER role)
- */
-router.post('/', requireUser, createProducto);
-
-/**
- * PUT /api/productos/:id
- * Update producto (requires USER role)
- */
-router.put('/:id', requireUser, updateProducto);
-
-/**
- * DELETE /api/productos/:id
- * Deactivate producto (requires USER role)
- */
-router.delete('/:id', requireUser, deleteProducto);
+// POST/PUT/DELETE routes - require USER role (not just viewer)
+router.post('/', requireUser, productoController.create);
+router.put('/:id', requireUser, productoController.update);
+router.delete('/:id', requireUser, productoController.delete);
 
 export default router;

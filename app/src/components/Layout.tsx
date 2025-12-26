@@ -30,7 +30,7 @@ export function Layout({ children }: LayoutProps) {
   const { instance, accounts } = useMsal();
   const location = useLocation();
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['Contabilidad', 'Compras']));
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['Contabilidad', 'Personas', 'Empresa']));
 
   // Dev mode support
   const isDevMode = import.meta.env.VITE_DEV_MODE === 'true';
@@ -79,12 +79,10 @@ export function Layout({ children }: LayoutProps) {
       ]
     },
     {
-      label: 'Actores',
+      label: 'Personas',
       icon: '👥',
       items: [
-        { label: 'Actores', path: '/actores', icon: '🧑‍🤝‍🧑' },
-        { label: 'Clientes', path: '/clientes', icon: '🤝' },
-        { label: 'Proveedores', path: '/proveedores', icon: '🏭' },
+        { label: 'Personas', path: '/actores', icon: '🧑‍🤝‍🧑' },
       ]
     },
     {
@@ -134,15 +132,14 @@ export function Layout({ children }: LayoutProps) {
       label: 'Empresa',
       icon: '🏢',
       items: [
-        { label: 'Estancias', path: '/estancias', icon: '🌾' },
-        { label: 'Centros de Costo', path: '/centros-costo', icon: '🏗️' },
+        { label: 'Centros de Costo', path: '/empresa/centros-costo', icon: '🏗️' },
       ]
     },
     {
       label: 'Inventario',
       icon: '📦',
       items: [
-        { label: 'Productos', path: '/inventario', icon: '📦' },
+        { label: 'Productos', path: '/productos', icon: '📦' },
       ]
     },
     {

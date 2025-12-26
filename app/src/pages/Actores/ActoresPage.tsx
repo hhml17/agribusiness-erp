@@ -140,7 +140,7 @@ export function ActoresPage() {
   return (
     <div className="page-container">
       <div className="page-header">
-        <h1>Gestión de Actores</h1>
+        <h1>Gestión de Personas</h1>
         <p>Administra personas físicas y jurídicas (Clientes, Proveedores, Asociados)</p>
       </div>
 
@@ -177,7 +177,7 @@ export function ActoresPage() {
             variant="primary"
             onClick={() => navigate('/actores/nuevo')}
           >
-            + Nuevo Actor
+            + Nueva Persona
           </Button>
         </div>
 
@@ -185,13 +185,13 @@ export function ActoresPage() {
           columns={columns}
           data={actores}
           loading={loading}
-          emptyMessage="No hay actores registrados"
+          emptyMessage="No hay personas registradas"
         />
       </Card>
 
       <div className="stats-grid mt-4">
         <Card>
-          <h3>Total Actores</h3>
+          <h3>Total Personas</h3>
           <p className="text-3xl font-bold">{actores.length}</p>
         </Card>
         <Card>

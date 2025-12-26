@@ -1,6 +1,5 @@
 import { useMsal } from '@azure/msal-react';
 import { useState, useEffect } from 'react';
-import '../styles/Dashboard.css';
 
 export default function Dashboard() {
     const { accounts } = useMsal();

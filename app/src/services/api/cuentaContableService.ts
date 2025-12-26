@@ -1,37 +1,38 @@
 /**
- * Producto API Service
+ * Cuenta Contable API Service
  */
 import apiClient from '../../config/apiClient';
 import type {
-  Producto,
-  CreateProductoInput,
-  UpdateProductoInput,
-  ProductoFilters
-} from '../../types/producto';
+  CuentaContable,
+  CreateCuentaContableInput,
+  UpdateCuentaContableInput,
+  CuentaContableFilters
+} from '../../types/cuentaContable';
 
-const BASE_PATH = '/api/productos';
+const BASE_PATH = '/api/cuentas-contables';
 
-export const productoService = {
-  async getAll(filters?: ProductoFilters): Promise<Producto[]> {
+export const cuentaContableService = {
+  async getAll(filters?: CuentaContableFilters): Promise<CuentaContable[]> {
     const params = new URLSearchParams();
     if (filters?.activo !== undefined) params.append('activo', String(filters.activo));
-    if (filters?.search) params.append('search', filters.search);
+    if (filters?.tipo) params.append('tipo', filters.tipo);
+    if (filters?.nivel !== undefined) params.append('nivel', String(filters.nivel));
 
     const response = await apiClient.get(`${BASE_PATH}?${params.toString()}`);
     return response.data;
   },
 
-  async getById(id: string): Promise<Producto> {
+  async getById(id: string): Promise<CuentaContable> {
     const response = await apiClient.get(`${BASE_PATH}/${id}`);
     return response.data;
   },
 
-  async create(data: CreateProductoInput): Promise<Producto> {
+  async create(data: CreateCuentaContableInput): Promise<CuentaContable> {
     const response = await apiClient.post(BASE_PATH, data);
     return response.data;
   },
 
-  async update(id: string, data: UpdateProductoInput): Promise<Producto> {
+  async update(id: string, data: UpdateCuentaContableInput): Promise<CuentaContable> {
     const response = await apiClient.put(`${BASE_PATH}/${id}`, data);
     return response.data;
   },

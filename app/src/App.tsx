@@ -7,13 +7,16 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import { Inventario } from './pages/Inventario';
 import DashboardContable from './pages/Contabilidad/DashboardContable';
-import PlanCuentas from './pages/Contabilidad/PlanCuentas';
+import { PlanCuentasPage } from './pages/Contabilidad/PlanCuentasPage';
 import AsientosContables from './pages/Contabilidad/AsientosContables';
 import BalanceGeneral from './pages/Contabilidad/BalanceGeneral';
 import EstadoResultados from './pages/Contabilidad/EstadoResultados';
 import LibroMayor from './pages/Contabilidad/LibroMayor';
 import { ActoresPage } from './pages/Actores/ActoresPage';
 import { ActorFormPage } from './pages/Actores/ActorFormPage';
+import ProfilePage from './pages/Profile/ProfilePage';
+import { CentrosCostoPage } from './pages/Empresa/CentrosCostoPage';
+import { ProductosPage } from './pages/Productos/ProductosPage';
 import './App.css';
 
 // Check if dev mode is enabled
@@ -80,6 +83,15 @@ function App() {
                         )
                     } />
 
+                    {/* Productos */}
+                    <Route path="/productos" element={
+                        isDevMode ? <Layout><ProductosPage /></Layout> : (
+                            <AuthenticatedTemplate>
+                                <Layout><ProductosPage /></Layout>
+                            </AuthenticatedTemplate>
+                        )
+                    } />
+
                     {/* Actores */}
                     <Route path="/actores" element={
                         isDevMode ? <Layout><ActoresPage /></Layout> : (
@@ -110,6 +122,24 @@ function App() {
                         )
                     } />
 
+                    {/* Profile */}
+                    <Route path="/profile" element={
+                        isDevMode ? <Layout><ProfilePage /></Layout> : (
+                            <AuthenticatedTemplate>
+                                <Layout><ProfilePage /></Layout>
+                            </AuthenticatedTemplate>
+                        )
+                    } />
+
+                    {/* Empresa */}
+                    <Route path="/empresa/centros-costo" element={
+                        isDevMode ? <Layout><CentrosCostoPage /></Layout> : (
+                            <AuthenticatedTemplate>
+                                <Layout><CentrosCostoPage /></Layout>
+                            </AuthenticatedTemplate>
+                        )
+                    } />
+
                     {/* Contabilidad */}
                     <Route path="/contabilidad" element={
                         isDevMode ? <Layout><DashboardContable /></Layout> : (
@@ -119,9 +149,9 @@ function App() {
                         )
                     } />
                     <Route path="/contabilidad/plan-cuentas" element={
-                        isDevMode ? <Layout><PlanCuentas /></Layout> : (
+                        isDevMode ? <Layout><PlanCuentasPage /></Layout> : (
                             <AuthenticatedTemplate>
-                                <Layout><PlanCuentas /></Layout>
+                                <Layout><PlanCuentasPage /></Layout>
                             </AuthenticatedTemplate>
                         )
                     } />

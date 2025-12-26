@@ -68,6 +68,10 @@ export interface Actor {
   createdAt: string;
   updatedAt: string;
 
+  // Auditoría
+  createdBy?: string;
+  updatedBy?: string;
+
   // Relations
   cuentasContablesPorRol?: ActorCuentaContable[];
 }

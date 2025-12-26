@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { contabilidadService } from '../../services/contabilidad.service';
 import type { BalanceGeneral, EstadoResultados, AsientoContable } from '../../types/contabilidad';
-import '../../styles/contabilidad.css';
 
 
 const DashboardContable = () => {

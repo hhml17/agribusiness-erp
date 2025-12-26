@@ -1,5 +1,6 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { TenantRequest } from '../middleware/tenant.js';
 
 const prisma = new PrismaClient();
 
@@ -8,7 +9,7 @@ const prisma = new PrismaClient();
  * Get all actores for the authenticated tenant
  * Query params: ?tipoPersona=FISICA|JURIDICA, ?esCliente=boolean, ?esProveedor=boolean, ?esAsociado=boolean
  */
-export async function getActores(req: Request, res: Response) {
+export async function getActores(req: TenantRequest, res: Response) {
     try {
         const tenantId = req.headers['x-tenant-id'] as string;
         const { tipoPersona, esCliente, esProveedor, esAsociado, activo } = req.query;
@@ -58,7 +59,7 @@ export async function getActores(req: Request, res: Response) {
  * GET /api/actores/:id
  * Get single actor by ID
  */
-export async function getActor(req: Request, res: Response) {
+export async function getActor(req: TenantRequest, res: Response) {
     try {
         const tenantId = req.headers['x-tenant-id'] as string;
         const { id } = req.params;
@@ -89,7 +90,7 @@ export async function getActor(req: Request, res: Response) {
  * POST /api/actores
  * Create new actor
  */
-export async function createActor(req: Request, res: Response) {
+export async function createActor(req: TenantRequest, res: Response) {
     try {
         const tenantId = req.headers['x-tenant-id'] as string;
         const {
@@ -166,7 +167,9 @@ export async function createActor(req: Request, res: Response) {
                 pais: pais || 'PY',
                 esCliente: esCliente || false,
                 esProveedor: esProveedor || false,
-                esAsociado: esAsociado || false
+                esAsociado: esAsociado || false,
+                createdBy: req.user?.email || 'sistema',
+                updatedBy: req.user?.email || 'sistema'
             }
         });
 
@@ -181,7 +184,7 @@ export async function createActor(req: Request, res: Response) {
  * PUT /api/actores/:id
  * Update actor
  */
-export async function updateActor(req: Request, res: Response) {
+export async function updateActor(req: TenantRequest, res: Response) {
     try {
         const tenantId = req.headers['x-tenant-id'] as string;
         const { id } = req.params;
@@ -216,6 +219,9 @@ export async function updateActor(req: Request, res: Response) {
             updateData.fechaConstitucion = new Date(updateData.fechaConstitucion);
         }
 
+        // Add audit info
+        updateData.updatedBy = req.user?.email || 'sistema';
+
         const actor = await prisma.actor.update({
             where: { id },
             data: updateData
@@ -232,7 +238,7 @@ export async function updateActor(req: Request, res: Response) {
  * DELETE /api/actores/:id
  * Deactivate actor (soft delete)
  */
-export async function deleteActor(req: Request, res: Response) {
+export async function deleteActor(req: TenantRequest, res: Response) {
     try {
         const tenantId = req.headers['x-tenant-id'] as string;
         const { id } = req.params;
@@ -263,7 +269,7 @@ export async function deleteActor(req: Request, res: Response) {
  * GET /api/actores/:id/cuentas
  * Get all cuentas contables for an actor
  */
-export async function getActorCuentas(req: Request, res: Response) {
+export async function getActorCuentas(req: TenantRequest, res: Response) {
     try {
         const tenantId = req.headers['x-tenant-id'] as string;
         const { id } = req.params;
@@ -296,7 +302,7 @@ export async function getActorCuentas(req: Request, res: Response) {
  * POST /api/actores/:id/cuentas
  * Add cuenta contable for an actor
  */
-export async function createActorCuenta(req: Request, res: Response) {
+export async function createActorCuenta(req: TenantRequest, res: Response) {
     try {
         const tenantId = req.headers['x-tenant-id'] as string;
         const { id: actorId } = req.params;
@@ -377,7 +383,7 @@ export async function createActorCuenta(req: Request, res: Response) {
  * DELETE /api/actores/:id/cuentas/:cuentaId
  * Delete cuenta contable for an actor
  */
-export async function deleteActorCuenta(req: Request, res: Response) {
+export async function deleteActorCuenta(req: TenantRequest, res: Response) {
     try {
         const tenantId = req.headers['x-tenant-id'] as string;
         const { id: actorId, cuentaId } = req.params;

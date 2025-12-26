@@ -13,6 +13,9 @@ export { actoresService } from './actoresService';
 export { estanciasService } from './estanciasService';
 export { talonariosService } from './talonariosService';
 export { facturasEmitidasService } from './facturasEmitidasService';
+export { userService } from './userService';
+export { centroCostoService } from './centroCostoService';
+export { cuentaContableService } from './cuentaContableService';
 
 // Re-export types
 export type * from '../../types/api';
