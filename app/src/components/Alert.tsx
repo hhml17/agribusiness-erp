@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import '../styles/components/Alert.css';
 
 export type AlertType = 'success' | 'error' | 'warning' | 'info';
 

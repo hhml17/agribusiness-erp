@@ -1,5 +1,4 @@
 import React from 'react';
-import '../styles/components/Table.css';
 
 export interface Column<T> {
   key: keyof T | string;
