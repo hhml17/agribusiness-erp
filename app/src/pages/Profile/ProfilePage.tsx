@@ -1,5 +1,12 @@
 import { useState, useEffect } from 'react';
 import { userService } from '../../services/api';
+import { Button } from '../../components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Badge } from '../../components/ui/badge';
+import { Alert, AlertDescription } from '../../components/ui/alert';
+import { User, Mail, Calendar, CheckCircle, AlertCircle } from 'lucide-react';
 import type { UserProfile, UpdateUserProfileInput } from '../../types/user';
 
 export default function ProfilePage() {
@@ -7,6 +14,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [formData, setFormData] = useState<UpdateUserProfileInput>({
     nombre: '',
     apellido: '',
@@ -29,7 +37,7 @@ export default function ProfilePage() {
       });
     } catch (error) {
       console.error('Error loading profile:', error);
-      alert('Error al cargar el perfil');
+      setAlert({ type: 'error', message: 'Error al cargar el perfil' });
     } finally {
       setLoading(false);
     }
@@ -39,7 +47,7 @@ export default function ProfilePage() {
     e.preventDefault();
 
     if (!formData.nombre || !formData.apellido) {
-      alert('El nombre y apellido son obligatorios');
+      setAlert({ type: 'error', message: 'El nombre y apellido son obligatorios' });
       return;
     }
 
@@ -48,10 +56,13 @@ export default function ProfilePage() {
       const updated = await userService.updateProfile(formData);
       setProfile(updated);
       setEditing(false);
-      alert('Perfil actualizado exitosamente');
+      setAlert({ type: 'success', message: 'Perfil actualizado exitosamente' });
     } catch (error: any) {
       console.error('Error updating profile:', error);
-      alert(`Error al actualizar perfil: ${error.response?.data?.message || error.message}`);
+      setAlert({
+        type: 'error',
+        message: `Error al actualizar perfil: ${error.response?.data?.message || error.message}`
+      });
     } finally {
       setSaving(false);
     }
@@ -68,16 +79,16 @@ export default function ProfilePage() {
     setEditing(false);
   };
 
-  const getRoleBadgeClass = (role: string) => {
+  const getRoleBadgeVariant = (role: string): 'default' | 'secondary' | 'destructive' => {
     switch (role) {
       case 'ADMIN':
-        return 'badge-admin';
+        return 'destructive';
       case 'USER':
-        return 'badge-user';
+        return 'default';
       case 'VIEWER':
-        return 'badge-viewer';
+        return 'secondary';
       default:
-        return 'badge-default';
+        return 'default';
     }
   };
 
@@ -96,155 +107,190 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="profile-page">
-        <div className="loading">Cargando perfil...</div>
+      <div className="p-8 space-y-6">
+        <div className="text-center py-8 text-muted-foreground">Cargando perfil...</div>
       </div>
     );
   }
 
   if (!profile) {
     return (
-      <div className="profile-page">
-        <div className="error">No se pudo cargar el perfil</div>
+      <div className="p-8 space-y-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>No se pudo cargar el perfil</AlertDescription>
+        </Alert>
       </div>
     );
   }
 
   return (
-    <div className="profile-page">
-      <div className="profile-header">
-        <h1>Mi Perfil</h1>
+    <div className="p-8 space-y-6">
+      {alert && (
+        <Alert variant={alert.type === 'error' ? 'destructive' : 'default'}>
+          {alert.type === 'error' ? (
+            <AlertCircle className="h-4 w-4" />
+          ) : (
+            <CheckCircle className="h-4 w-4" />
+          )}
+          <AlertDescription>{alert.message}</AlertDescription>
+        </Alert>
+      )}
+
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Mi Perfil</h1>
+          <p className="text-muted-foreground mt-1">
+            Gestiona tu información personal y preferencias
+          </p>
+        </div>
         {!editing && (
-          <button
-            className="btn-edit"
-            onClick={() => setEditing(true)}
-          >
+          <Button onClick={() => setEditing(true)}>
+            <User className="mr-2 h-4 w-4" />
             Editar Perfil
-          </button>
+          </Button>
         )}
       </div>
 
-      <div className="profile-content">
-        {/* Avatar Section */}
-        <div className="profile-avatar-section">
-          <div className="profile-avatar">
-            {profile.nombre.charAt(0)}{profile.apellido.charAt(0)}
-          </div>
-          <div className="profile-name">
-            {profile.nombre} {profile.apellido}
-          </div>
-          <div className="profile-email">{profile.email}</div>
-          <div className={`profile-role-badge ${getRoleBadgeClass(profile.role)}`}>
-            {getRoleLabel(profile.role)}
-          </div>
-        </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Avatar Card */}
+        <Card className="lg:col-span-1">
+          <CardHeader>
+            <CardTitle>Perfil</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center space-y-4">
+            <div className="w-24 h-24 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-3xl font-bold">
+              {profile.nombre.charAt(0)}{profile.apellido.charAt(0)}
+            </div>
+            <div className="text-center space-y-2">
+              <div className="text-xl font-bold">
+                {profile.nombre} {profile.apellido}
+              </div>
+              <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                <Mail className="h-4 w-4" />
+                <span className="text-sm">{profile.email}</span>
+              </div>
+              <Badge variant={getRoleBadgeVariant(profile.role)}>
+                {getRoleLabel(profile.role)}
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Profile Form */}
-        <form onSubmit={handleSubmit} className="profile-form">
-          <div className="form-section">
-            <h2>Información Personal</h2>
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Información Personal</CardTitle>
+            <CardDescription>
+              Actualiza tu información de perfil
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="nombre">Nombre</Label>
+                  <Input
+                    id="nombre"
+                    value={formData.nombre}
+                    onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                    disabled={!editing}
+                    required
+                  />
+                </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="nombre">Nombre</label>
-                <input
-                  type="text"
-                  id="nombre"
-                  className="form-control"
-                  value={formData.nombre}
-                  onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                <div className="space-y-2">
+                  <Label htmlFor="apellido">Apellido</Label>
+                  <Input
+                    id="apellido"
+                    value={formData.apellido}
+                    onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
+                    disabled={!editing}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   disabled={!editing}
-                  required
                 />
+                <p className="text-xs text-muted-foreground">
+                  El email está vinculado a tu cuenta de Azure AD
+                </p>
               </div>
 
-              <div className="form-group">
-                <label htmlFor="apellido">Apellido</label>
-                <input
-                  type="text"
-                  id="apellido"
-                  className="form-control"
-                  value={formData.apellido}
-                  onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
-                  disabled={!editing}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="email">Email</label>
-              <input
-                type="email"
-                id="email"
-                className="form-control"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                disabled={!editing}
-              />
-              <small className="form-text">El email está vinculado a tu cuenta de Azure AD</small>
-            </div>
-          </div>
-
-          <div className="form-section">
-            <h2>Información de la Cuenta</h2>
-
-            <div className="info-grid">
-              <div className="info-item">
-                <label>Rol</label>
-                <div className="info-value">
-                  <span className={`role-badge ${getRoleBadgeClass(profile.role)}`}>
-                    {getRoleLabel(profile.role)}
-                  </span>
+              {editing && (
+                <div className="flex gap-2 justify-end">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={handleCancel}
+                    disabled={saving}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button type="submit" disabled={saving}>
+                    {saving ? 'Guardando...' : 'Guardar Cambios'}
+                  </Button>
                 </div>
-              </div>
-
-              <div className="info-item">
-                <label>Estado</label>
-                <div className="info-value">
-                  <span className={`status-badge ${profile.activo ? 'status-active' : 'status-inactive'}`}>
-                    {profile.activo ? 'Activo' : 'Inactivo'}
-                  </span>
-                </div>
-              </div>
-
-              <div className="info-item">
-                <label>Fecha de Registro</label>
-                <div className="info-value">
-                  {new Date(profile.createdAt).toLocaleDateString('es-PY')}
-                </div>
-              </div>
-
-              <div className="info-item">
-                <label>Última Actualización</label>
-                <div className="info-value">
-                  {new Date(profile.updatedAt).toLocaleString('es-PY')}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {editing && (
-            <div className="form-actions">
-              <button
-                type="button"
-                className="btn-cancel"
-                onClick={handleCancel}
-                disabled={saving}
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className="btn-save"
-                disabled={saving}
-              >
-                {saving ? 'Guardando...' : 'Guardar Cambios'}
-              </button>
-            </div>
-          )}
-        </form>
+              )}
+            </form>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Account Information */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Información de la Cuenta</CardTitle>
+          <CardDescription>
+            Detalles de tu cuenta y actividad
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="space-y-2">
+              <div className="text-sm font-medium text-muted-foreground">Rol</div>
+              <Badge variant={getRoleBadgeVariant(profile.role)}>
+                {getRoleLabel(profile.role)}
+              </Badge>
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-sm font-medium text-muted-foreground">Estado</div>
+              <Badge variant={profile.activo ? 'active' : 'inactive'}>
+                {profile.activo ? 'Activo' : 'Inactivo'}
+              </Badge>
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Fecha de Registro
+              </div>
+              <div className="text-sm font-medium">
+                {new Date(profile.createdAt).toLocaleDateString('es-PY')}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Última Actualización
+              </div>
+              <div className="text-sm font-medium">
+                {new Date(profile.updatedAt).toLocaleDateString('es-PY')}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -1,6 +1,14 @@
 import { useState, useEffect } from 'react';
 import { centroCostoService } from '../../services/api';
-import { Alert, type AlertType } from '../../components';
+import { Button } from '../../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
+import { Alert, AlertDescription, AlertTitle } from '../../components/ui/alert';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Badge } from '../../components/ui/badge';
+import { Plus, Pencil, X, CheckCircle, AlertCircle } from 'lucide-react';
 import type { CentroCosto, CreateCentroCostoInput } from '../../types/centroCosto';
 
 export function CentrosCostoPage() {
@@ -8,7 +16,7 @@ export function CentrosCostoPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingCentro, setEditingCentro] = useState<CentroCosto | null>(null);
-  const [alert, setAlert] = useState<{ type: AlertType; message: string } | null>(null);
+  const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [showInactive, setShowInactive] = useState(false);
   const [formData, setFormData] = useState<CreateCentroCostoInput>({
     codigo: '',
@@ -161,175 +169,193 @@ export function CentrosCostoPage() {
     }
   };
 
-  if (loading) {
-    return <div className="loading">Cargando...</div>;
-  }
-
   return (
-    <div className="centros-costo-page">
+    <div className="p-8 space-y-6">
       {alert && (
-        <Alert
-          type={alert.type}
-          message={alert.message}
-          onClose={() => setAlert(null)}
-        />
+        <Alert variant={alert.type === 'error' ? 'destructive' : 'default'} className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>{alert.type === 'error' ? 'Error' : 'Éxito'}</AlertTitle>
+          <AlertDescription>{alert.message}</AlertDescription>
+        </Alert>
       )}
 
-      <div className="page-header">
-        <h1>Empresa: Centros de Costo</h1>
-        <div className="header-actions">
-          <label className="checkbox-label">
-            <input
-              type="checkbox"
-              checked={showInactive}
-              onChange={(e) => setShowInactive(e.target.checked)}
-            />
-            Mostrar inactivos
-          </label>
-          <button className="btn-primary" onClick={() => handleOpenModal()}>
-            + Nuevo Centro de Costo
-          </button>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Centros de Costo</h1>
+          <p className="text-muted-foreground mt-1">
+            Gestión de centros de costo de la empresa
+          </p>
         </div>
       </div>
 
-      <div className="table-container">
-        <table className="centros-table">
-          <thead>
-            <tr>
-              <th>Código</th>
-              <th>Nombre</th>
-              <th>Descripción</th>
-              <th>Tipo</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {centros.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="no-data">
-                  No hay centros de costo registrados
-                </td>
-              </tr>
-            ) : (
-              centros.map((centro) => (
-                <tr key={centro.id} className={!centro.activo ? 'inactive-row' : ''}>
-                  <td>{centro.codigo}</td>
-                  <td>{centro.nombre}</td>
-                  <td>{centro.descripcion || '-'}</td>
-                  <td>{centro.tipo || '-'}</td>
-                  <td>
-                    <span className={`badge ${centro.activo ? 'badge-active' : 'badge-inactive'}`}>
-                      {centro.activo ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </td>
-                  <td className="actions">
-                    {centro.activo ? (
-                      <>
-                        <button
-                          className="btn-edit"
-                          onClick={() => handleOpenModal(centro)}
-                          title="Editar"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          className="btn-delete"
-                          onClick={() => handleDelete(centro.id)}
-                          title="Desactivar"
-                        >
-                          ❌
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        className="btn-reactivate"
-                        onClick={() => handleReactivate(centro.id)}
-                        title="Reactivar"
-                      >
-                        ✅
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <CardTitle className="text-xl font-semibold">Listado de Centros de Costo</CardTitle>
+          <div className="flex gap-2 items-center">
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showInactive}
+                onChange={(e) => setShowInactive(e.target.checked)}
+                className="rounded border-gray-300"
+              />
+              Mostrar inactivos
+            </label>
+            <Button onClick={() => handleOpenModal()} size="sm">
+              <Plus className="mr-2 h-4 w-4" />
+              Nuevo Centro de Costo
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="text-center py-8 text-muted-foreground">Cargando...</div>
+          ) : centros.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No hay centros de costo registrados
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Código</TableHead>
+                  <TableHead>Nombre</TableHead>
+                  <TableHead>Descripción</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {centros.map((centro) => (
+                  <TableRow
+                    key={centro.id}
+                    className={!centro.activo ? 'opacity-60' : ''}
+                  >
+                    <TableCell className="font-medium">{centro.codigo}</TableCell>
+                    <TableCell>{centro.nombre}</TableCell>
+                    <TableCell className="text-muted-foreground">{centro.descripcion || '-'}</TableCell>
+                    <TableCell>{centro.tipo || '-'}</TableCell>
+                    <TableCell>
+                      <Badge variant={centro.activo ? 'active' : 'inactive'}>
+                        {centro.activo ? 'Activo' : 'Inactivo'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        {centro.activo ? (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleOpenModal(centro)}
+                              title="Editar"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDelete(centro.id)}
+                              title="Desactivar"
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleReactivate(centro.id)}
+                            title="Reactivar"
+                            className="text-green-600 hover:text-green-700"
+                          >
+                            <CheckCircle className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
 
-      {showModal && (
-        <div className="modal-overlay" onClick={handleCloseModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{editingCentro ? 'Editar Centro de Costo' : 'Nuevo Centro de Costo'}</h2>
-              <button className="btn-close" onClick={handleCloseModal}>
-                ×
-              </button>
+      <Dialog open={showModal} onOpenChange={setShowModal}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>
+              {editingCentro ? 'Editar Centro de Costo' : 'Nuevo Centro de Costo'}
+            </DialogTitle>
+            <DialogDescription>
+              {editingCentro
+                ? 'Actualiza la información del centro de costo.'
+                : 'Ingresa los datos del nuevo centro de costo.'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="codigo">
+                Código <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="codigo"
+                value={formData.codigo}
+                onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
+                required
+                disabled={!!editingCentro}
+              />
             </div>
 
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label htmlFor="codigo">
-                  Código <span className="required">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="codigo"
-                  value={formData.codigo}
-                  onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
-                  required
-                  disabled={!!editingCentro}
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="nombre">
+                Nombre <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="nombre"
+                value={formData.nombre}
+                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                required
+              />
+            </div>
 
-              <div className="form-group">
-                <label htmlFor="nombre">
-                  Nombre <span className="required">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="nombre"
-                  value={formData.nombre}
-                  onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                  required
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="tipo">Tipo</Label>
+              <Input
+                id="tipo"
+                value={formData.tipo}
+                onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
+                placeholder="Ej: Producción, Administrativo, Ventas"
+              />
+            </div>
 
-              <div className="form-group">
-                <label htmlFor="tipo">Tipo</label>
-                <input
-                  type="text"
-                  id="tipo"
-                  value={formData.tipo}
-                  onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
-                  placeholder="Ej: Producción, Administrativo, Ventas"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="descripcion">Descripción</Label>
+              <textarea
+                id="descripcion"
+                value={formData.descripcion}
+                onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+                rows={3}
+                placeholder="Se usa para gastos realizados en..."
+                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              />
+            </div>
 
-              <div className="form-group">
-                <label htmlFor="descripcion">Descripción</label>
-                <textarea
-                  id="descripcion"
-                  value={formData.descripcion}
-                  onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-                  rows={3}
-                  placeholder="Se usa para gastos realizados en..."
-                />
-              </div>
-
-              <div className="modal-footer">
-                <button type="button" className="btn-secondary" onClick={handleCloseModal}>
-                  Cancelar
-                </button>
-                <button type="submit" className="btn-primary">
-                  {editingCentro ? 'Actualizar' : 'Crear'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            <DialogFooter>
+              <Button type="button" variant="secondary" onClick={handleCloseModal}>
+                Cancelar
+              </Button>
+              <Button type="submit">
+                {editingCentro ? 'Actualizar' : 'Crear'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
