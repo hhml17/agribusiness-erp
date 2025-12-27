@@ -3,14 +3,19 @@
  * Gestión de órdenes de compra con workflow de aprobación
  */
 
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import { TenantRequest } from '../middleware/tenant.js';
 import { prisma } from '../config/database.js';
 
 // GET /api/ordenes-compra - Listar todas las órdenes de compra
-export const getOrdenesCompra = async (req: Request, res: Response) => {
+export const getOrdenesCompra = async (req: TenantRequest, res: Response) => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string;
-    const { estado, proveedorId, fechaDesde, fechaHasta, page = 1, limit = 20 } = req.query;
+    const tenantId = req.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({ error: 'No autorizado' });
+    }
+
+    const { estado, proveedorId, fechaDesde, fechaHasta } = req.query;
 
     const where: any = { tenantId };
 
@@ -28,45 +33,25 @@ export const getOrdenesCompra = async (req: Request, res: Response) => {
       if (fechaHasta) where.fecha.lte = new Date(fechaHasta as string);
     }
 
-    const skip = (Number(page) - 1) * Number(limit);
-
-    const [ordenes, total] = await Promise.all([
-      prisma.ordenCompra.findMany({
-        where,
-        include: {
-          proveedor: {
-            select: {
-              codigo: true,
-              nombre: true,
-              ruc: true,
-            },
+    const ordenes = await prisma.ordenCompra.findMany({
+      where,
+      include: {
+        proveedor: {
+          select: {
+            nombre: true,
           },
-          _count: {
-            select: {
-              items: true,
-              facturas: true,
-            },
-          },
-        },
-        orderBy: { fecha: 'desc' },
-        skip,
-        take: Number(limit),
-      }),
-      prisma.ordenCompra.count({ where }),
-    ]);
-
-    res.json({
-      success: true,
-      data: {
-        ordenes,
-        pagination: {
-          page: Number(page),
-          limit: Number(limit),
-          total,
-          totalPages: Math.ceil(total / Number(limit)),
         },
       },
+      orderBy: { fecha: 'desc' },
     });
+
+    // Mapear para incluir proveedorNombre en el nivel raíz
+    const ordenesConProveedor = ordenes.map(orden => ({
+      ...orden,
+      proveedorNombre: orden.proveedor.nombre,
+    }));
+
+    res.json(ordenesConProveedor);
   } catch (error) {
     console.error('Error fetching ordenes de compra:', error);
     res.status(500).json({
@@ -77,9 +62,12 @@ export const getOrdenesCompra = async (req: Request, res: Response) => {
 };
 
 // GET /api/ordenes-compra/:id - Obtener una orden de compra por ID
-export const getOrdenCompraById = async (req: Request, res: Response) => {
+export const getOrdenCompraById = async (req: TenantRequest, res: Response) => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string;
+    const tenantId = req.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({ error: 'No autorizado' });
+    }
     const { id } = req.params;
 
     const orden = await prisma.ordenCompra.findFirst({
@@ -130,9 +118,12 @@ export const getOrdenCompraById = async (req: Request, res: Response) => {
 };
 
 // POST /api/ordenes-compra - Crear nueva orden de compra
-export const createOrdenCompra = async (req: Request, res: Response) => {
+export const createOrdenCompra = async (req: TenantRequest, res: Response) => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string;
+    const tenantId = req.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({ error: 'No autorizado' });
+    }
     const {
       proveedorId,
       descripcion,
@@ -212,9 +203,12 @@ export const createOrdenCompra = async (req: Request, res: Response) => {
 };
 
 // PUT /api/ordenes-compra/:id - Actualizar orden de compra
-export const updateOrdenCompra = async (req: Request, res: Response) => {
+export const updateOrdenCompra = async (req: TenantRequest, res: Response) => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string;
+    const tenantId = req.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({ error: 'No autorizado' });
+    }
     const { id } = req.params;
     const {
       proveedorId,
@@ -303,9 +297,12 @@ export const updateOrdenCompra = async (req: Request, res: Response) => {
 };
 
 // PUT /api/ordenes-compra/:id/enviar-aprobacion - Enviar a aprobación
-export const enviarAprobacion = async (req: Request, res: Response) => {
+export const enviarAprobacion = async (req: TenantRequest, res: Response) => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string;
+    const tenantId = req.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({ error: 'No autorizado' });
+    }
     const { id } = req.params;
 
     const orden = await prisma.ordenCompra.findFirst({
@@ -352,9 +349,12 @@ export const enviarAprobacion = async (req: Request, res: Response) => {
 };
 
 // PUT /api/ordenes-compra/:id/aprobar - Aprobar orden de compra
-export const aprobarOrdenCompra = async (req: Request, res: Response) => {
+export const aprobarOrdenCompra = async (req: TenantRequest, res: Response) => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string;
+    const tenantId = req.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({ error: 'No autorizado' });
+    }
     const { id } = req.params;
     const { aprobadoPor } = req.body;
 
@@ -404,9 +404,12 @@ export const aprobarOrdenCompra = async (req: Request, res: Response) => {
 };
 
 // PUT /api/ordenes-compra/:id/rechazar - Rechazar orden de compra
-export const rechazarOrdenCompra = async (req: Request, res: Response) => {
+export const rechazarOrdenCompra = async (req: TenantRequest, res: Response) => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string;
+    const tenantId = req.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({ error: 'No autorizado' });
+    }
     const { id } = req.params;
     const { motivoRechazo, aprobadoPor } = req.body;
 
@@ -464,9 +467,12 @@ export const rechazarOrdenCompra = async (req: Request, res: Response) => {
 };
 
 // PUT /api/ordenes-compra/:id/anular - Anular orden de compra
-export const anularOrdenCompra = async (req: Request, res: Response) => {
+export const anularOrdenCompra = async (req: TenantRequest, res: Response) => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string;
+    const tenantId = req.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({ error: 'No autorizado' });
+    }
     const { id } = req.params;
 
     const orden = await prisma.ordenCompra.findFirst({

@@ -17,6 +17,8 @@ import { ActorFormPage } from './pages/Actores/ActorFormPage';
 import ProfilePage from './pages/Profile/ProfilePage';
 import { CentrosCostoPage } from './pages/Empresa/CentrosCostoPage';
 import { ProductosPage } from './pages/Productos/ProductosPage';
+import { OrdenCompraPage } from './pages/Compras/OrdenCompraPage';
+import { OrdenCompraForm } from './pages/Compras/OrdenCompraForm';
 import './App.css';
 
 // Check if dev mode is enabled
@@ -136,6 +138,29 @@ function App() {
                         isDevMode ? <Layout><CentrosCostoPage /></Layout> : (
                             <AuthenticatedTemplate>
                                 <Layout><CentrosCostoPage /></Layout>
+                            </AuthenticatedTemplate>
+                        )
+                    } />
+
+                    {/* Compras */}
+                    <Route path="/compras/ordenes" element={
+                        isDevMode ? <Layout><OrdenCompraPage /></Layout> : (
+                            <AuthenticatedTemplate>
+                                <Layout><OrdenCompraPage /></Layout>
+                            </AuthenticatedTemplate>
+                        )
+                    } />
+                    <Route path="/compras/ordenes/nueva" element={
+                        isDevMode ? <Layout><OrdenCompraForm /></Layout> : (
+                            <AuthenticatedTemplate>
+                                <Layout><OrdenCompraForm /></Layout>
+                            </AuthenticatedTemplate>
+                        )
+                    } />
+                    <Route path="/compras/ordenes/:id/editar" element={
+                        isDevMode ? <Layout><OrdenCompraForm /></Layout> : (
+                            <AuthenticatedTemplate>
+                                <Layout><OrdenCompraForm /></Layout>
                             </AuthenticatedTemplate>
                         )
                     } />

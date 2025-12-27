@@ -16,6 +16,8 @@ export { facturasEmitidasService } from './facturasEmitidasService';
 export { userService } from './userService';
 export { centroCostoService } from './centroCostoService';
 export { cuentaContableService } from './cuentaContableService';
+export { ordenCompraService } from './ordenCompraService';
+export { cotizacionService } from './cotizacionService';
 
 // Re-export types
 export type * from '../../types/api';

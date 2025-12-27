@@ -30,7 +30,7 @@ export function Layout({ children }: LayoutProps) {
   const { instance, accounts } = useMsal();
   const location = useLocation();
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['Contabilidad', 'Personas', 'Empresa']));
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['Contabilidad', 'Personas', 'Configuración']));
 
   // Dev mode support
   const isDevMode = import.meta.env.VITE_DEV_MODE === 'true';
@@ -111,7 +111,6 @@ export function Layout({ children }: LayoutProps) {
       icon: '💼',
       items: [
         { label: 'Dashboard', path: '/contabilidad', icon: '📊' },
-        { label: 'Plan de Cuentas', path: '/contabilidad/plan-cuentas', icon: '📋' },
         { label: 'Asientos Contables', path: '/contabilidad/asientos', icon: '✍️' },
         { label: 'Libro Mayor', path: '/contabilidad/mayor', icon: '📖' },
         { label: 'Balance General', path: '/contabilidad/balance', icon: '⚖️' },
@@ -129,17 +128,13 @@ export function Layout({ children }: LayoutProps) {
       ]
     },
     {
-      label: 'Empresa',
-      icon: '🏢',
-      items: [
-        { label: 'Centros de Costo', path: '/empresa/centros-costo', icon: '🏗️' },
-      ]
-    },
-    {
-      label: 'Inventario',
-      icon: '📦',
+      label: 'Configuración',
+      icon: '⚙️',
       items: [
         { label: 'Productos', path: '/productos', icon: '📦' },
+        { label: 'Centros de Costo', path: '/empresa/centros-costo', icon: '🏗️' },
+        { label: 'Plan de Cuentas', path: '/contabilidad/plan-cuentas', icon: '📋' },
+        { label: 'Talonarios', path: '/talonarios', icon: '📔' },
       ]
     },
     {

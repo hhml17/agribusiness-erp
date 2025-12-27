@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Table, Button, Modal, Card, type Column } from '../components';
 import { productoService, type Producto, type CreateProductoInput } from '../services/api';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
+import { Pencil, Trash2, Package } from 'lucide-react';
 
 export function Inventario() {
   const [productos, setProductos] = useState<Producto[]>([]);
@@ -111,224 +117,223 @@ export function Inventario() {
     }).format(value);
   };
 
-  const columns: Column<Producto>[] = [
-    {
-      key: 'codigo',
-      header: 'Código',
-      width: '100px',
-    },
-    {
-      key: 'nombre',
-      header: 'Nombre',
-    },
-    {
-      key: 'categoria',
-      header: 'Categoría',
-      width: '150px',
-    },
-    {
-      key: 'stock',
-      header: 'Stock',
-      width: '100px',
-      render: (item) => (
-        <span className={item.stockMinimo && item.stock <= item.stockMinimo ? 'stock-bajo' : ''}>
-          {item.stock} {item.unidadMedida}
-        </span>
-      ),
-    },
-    {
-      key: 'precioCompra',
-      header: 'P. Compra',
-      width: '120px',
-      render: (item) => formatCurrency(item.precioCompra),
-    },
-    {
-      key: 'precioVenta',
-      header: 'P. Venta',
-      width: '120px',
-      render: (item) => formatCurrency(item.precioVenta),
-    },
-    {
-      key: 'id',
-      header: 'Acciones',
-      width: '150px',
-      render: (item) => (
-        <div className="table-actions">
-          <button className="btn-icon" onClick={() => handleEdit(item)} title="Editar">
-            ✏️
-          </button>
-          <button className="btn-icon" onClick={() => handleDelete(item.id)} title="Eliminar">
-            🗑️
-          </button>
-        </div>
-      ),
-    },
-  ];
-
   return (
-    <div className="inventario-page">
-      <div className="page-header">
+    <div className="p-8 space-y-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h1>Inventario de Productos</h1>
-          <p className="page-subtitle">Gestión de productos y stock</p>
+          <h1 className="text-3xl font-bold tracking-tight">Inventario de Productos</h1>
+          <p className="text-muted-foreground mt-1">Gestión de productos y stock</p>
         </div>
       </div>
 
-      <Card
-        actions={
-          <div className="card-toolbar">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <CardTitle className="text-xl font-semibold">Productos</CardTitle>
+          <div className="flex gap-2">
             <Button
-              variant={showBajoStock ? 'secondary' : 'primary'}
+              variant={showBajoStock ? 'secondary' : 'outline'}
               onClick={() => setShowBajoStock(!showBajoStock)}
-              size="small"
+              size="sm"
             >
+              <Package className="mr-2 h-4 w-4" />
               {showBajoStock ? 'Ver Todos' : 'Stock Bajo'}
             </Button>
-            <Button onClick={() => setShowModal(true)}>+ Nuevo Producto</Button>
+            <Button onClick={() => setShowModal(true)} size="sm">
+              + Nuevo Producto
+            </Button>
           </div>
-        }
-      >
-        <Table
-          data={productos}
-          columns={columns}
-          loading={loading}
-          emptyMessage={
-            showBajoStock
-              ? 'No hay productos con stock bajo'
-              : 'No hay productos registrados'
-          }
-        />
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="text-center py-8 text-muted-foreground">Cargando...</div>
+          ) : productos.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              {showBajoStock ? 'No hay productos con stock bajo' : 'No hay productos registrados'}
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[100px]">Código</TableHead>
+                  <TableHead>Nombre</TableHead>
+                  <TableHead className="w-[150px]">Categoría</TableHead>
+                  <TableHead className="w-[100px]">Stock</TableHead>
+                  <TableHead className="w-[120px]">P. Compra</TableHead>
+                  <TableHead className="w-[120px]">P. Venta</TableHead>
+                  <TableHead className="w-[100px]">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {productos.map((producto) => (
+                  <TableRow key={producto.id}>
+                    <TableCell className="font-mono">{producto.codigo}</TableCell>
+                    <TableCell className="font-medium">{producto.nombre}</TableCell>
+                    <TableCell>{producto.categoria}</TableCell>
+                    <TableCell>
+                      <span className={producto.stockMinimo && producto.stock <= producto.stockMinimo ? 'text-destructive font-semibold' : ''}>
+                        {producto.stock} {producto.unidadMedida}
+                      </span>
+                    </TableCell>
+                    <TableCell>{formatCurrency(producto.precioCompra)}</TableCell>
+                    <TableCell>{formatCurrency(producto.precioVenta)}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEdit(producto)}
+                          title="Editar"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDelete(producto.id)}
+                          title="Eliminar"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
       </Card>
 
-      <Modal
-        isOpen={showModal}
-        onClose={handleCloseModal}
-        title={selectedProducto ? 'Editar Producto' : 'Nuevo Producto'}
-        size="medium"
-        footer={
-          <>
-            <Button variant="secondary" onClick={handleCloseModal}>
-              Cancelar
-            </Button>
-            <Button onClick={handleSubmit}>
-              {selectedProducto ? 'Actualizar' : 'Crear'}
-            </Button>
-          </>
-        }
-      >
-        <form className="producto-form" onSubmit={handleSubmit}>
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="codigo">Código *</label>
-              <input
-                id="codigo"
+      <Dialog open={showModal} onOpenChange={setShowModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{selectedProducto ? 'Editar Producto' : 'Nuevo Producto'}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="codigo">Código *</Label>
+                <Input
+                  id="codigo"
+                  type="text"
+                  required
+                  value={formData.codigo}
+                  onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="categoria">Categoría</Label>
+                <Input
+                  id="categoria"
+                  type="text"
+                  value={formData.categoria}
+                  onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="nombre">Nombre *</Label>
+              <Input
+                id="nombre"
                 type="text"
                 required
-                value={formData.codigo}
-                onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
+                value={formData.nombre}
+                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
               />
             </div>
-            <div className="form-group">
-              <label htmlFor="categoria">Categoría</label>
-              <input
-                id="categoria"
-                type="text"
-                value={formData.categoria}
-                onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
-              />
-            </div>
-          </div>
 
-          <div className="form-group">
-            <label htmlFor="nombre">Nombre *</label>
-            <input
-              id="nombre"
-              type="text"
-              required
-              value={formData.nombre}
-              onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="descripcion">Descripción</Label>
+              <textarea
+                id="descripcion"
+                rows={3}
+                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                value={formData.descripcion}
+                onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+              />
+            </div>
 
-          <div className="form-group">
-            <label htmlFor="descripcion">Descripción</label>
-            <textarea
-              id="descripcion"
-              rows={3}
-              value={formData.descripcion}
-              onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-            />
-          </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="unidadMedida">Unidad de Medida *</Label>
+                <select
+                  id="unidadMedida"
+                  required
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  value={formData.unidadMedida}
+                  onChange={(e) => setFormData({ ...formData, unidadMedida: e.target.value })}
+                >
+                  <option value="kg">Kilogramos (kg)</option>
+                  <option value="litros">Litros</option>
+                  <option value="unidades">Unidades</option>
+                  <option value="dosis">Dosis</option>
+                  <option value="metros">Metros</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="stock">Stock Actual *</Label>
+                <Input
+                  id="stock"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  required
+                  value={formData.stock}
+                  onChange={(e) => setFormData({ ...formData, stock: parseFloat(e.target.value) || 0 })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="stockMinimo">Stock Mínimo</Label>
+                <Input
+                  id="stockMinimo"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.stockMinimo}
+                  onChange={(e) => setFormData({ ...formData, stockMinimo: parseFloat(e.target.value) || 0 })}
+                />
+              </div>
+            </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="unidadMedida">Unidad de Medida *</label>
-              <select
-                id="unidadMedida"
-                required
-                value={formData.unidadMedida}
-                onChange={(e) => setFormData({ ...formData, unidadMedida: e.target.value })}
-              >
-                <option value="kg">Kilogramos (kg)</option>
-                <option value="litros">Litros</option>
-                <option value="unidades">Unidades</option>
-                <option value="dosis">Dosis</option>
-                <option value="metros">Metros</option>
-              </select>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="precioCompra">Precio de Compra *</Label>
+                <Input
+                  id="precioCompra"
+                  type="number"
+                  min="0"
+                  step="1"
+                  required
+                  value={formData.precioCompra}
+                  onChange={(e) => setFormData({ ...formData, precioCompra: parseFloat(e.target.value) || 0 })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="precioVenta">Precio de Venta *</Label>
+                <Input
+                  id="precioVenta"
+                  type="number"
+                  min="0"
+                  step="1"
+                  required
+                  value={formData.precioVenta}
+                  onChange={(e) => setFormData({ ...formData, precioVenta: parseFloat(e.target.value) || 0 })}
+                />
+              </div>
             </div>
-            <div className="form-group">
-              <label htmlFor="stock">Stock Actual *</label>
-              <input
-                id="stock"
-                type="number"
-                min="0"
-                step="0.01"
-                required
-                value={formData.stock}
-                onChange={(e) => setFormData({ ...formData, stock: parseFloat(e.target.value) || 0 })}
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="stockMinimo">Stock Mínimo</label>
-              <input
-                id="stockMinimo"
-                type="number"
-                min="0"
-                step="0.01"
-                value={formData.stockMinimo}
-                onChange={(e) => setFormData({ ...formData, stockMinimo: parseFloat(e.target.value) || 0 })}
-              />
-            </div>
-          </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="precioCompra">Precio de Compra *</label>
-              <input
-                id="precioCompra"
-                type="number"
-                min="0"
-                step="1"
-                required
-                value={formData.precioCompra}
-                onChange={(e) => setFormData({ ...formData, precioCompra: parseFloat(e.target.value) || 0 })}
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="precioVenta">Precio de Venta *</label>
-              <input
-                id="precioVenta"
-                type="number"
-                min="0"
-                step="1"
-                required
-                value={formData.precioVenta}
-                onChange={(e) => setFormData({ ...formData, precioVenta: parseFloat(e.target.value) || 0 })}
-              />
-            </div>
-          </div>
-        </form>
-      </Modal>
+            <DialogFooter>
+              <Button type="button" variant="secondary" onClick={handleCloseModal}>
+                Cancelar
+              </Button>
+              <Button type="submit">
+                {selectedProducto ? 'Actualizar' : 'Crear'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
