@@ -1,7 +1,14 @@
 import { useState, useEffect } from 'react';
 import contabilidadService from '../../services/contabilidad.service';
 import type { BalanceGeneral as BalanceGeneralType } from '../../types/contabilidad';
-
+import { Button } from '../../components/ui/button';
+import { Card, CardContent } from '../../components/ui/card';
+import { Alert, AlertDescription } from '../../components/ui/alert';
+import { Label } from '../../components/ui/label';
+import { Input } from '../../components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Badge } from '../../components/ui/badge';
+import { Printer, Download, RefreshCw, CheckCircle, AlertCircle } from 'lucide-react';
 
 const BalanceGeneral = () => {
   const [balance, setBalance] = useState<BalanceGeneralType | null>(null);
@@ -60,190 +67,215 @@ const BalanceGeneral = () => {
 
   if (loading) {
     return (
-      <div className="balance-container">
-        <div className="loading">Generando Balance General...</div>
+      <div className="p-8 space-y-6">
+        <div className="text-center py-8 text-muted-foreground">Generando Balance General...</div>
       </div>
     );
   }
 
   if (error || !balance) {
     return (
-      <div className="balance-container">
-        <div className="error-message">
-          <h3>Error</h3>
-          <p>{error || 'No se pudo cargar el balance'}</p>
-          <button onClick={loadBalance} className="btn-primary">
-            Reintentar
-          </button>
-        </div>
+      <div className="p-8 space-y-6">
+        <Alert variant="destructive">
+          <AlertDescription>
+            {error || 'No se pudo cargar el balance'}
+          </AlertDescription>
+        </Alert>
+        <Button onClick={loadBalance}>Reintentar</Button>
       </div>
     );
   }
 
+  const isBalanced = Math.abs(balance.totalActivos - (balance.totalPasivos + balance.totalPatrimonio)) < 0.01;
+
   return (
-    <div className="balance-container">
-      <div className="page-header no-print">
-        <div className="header-info">
-          <h1>Balance General</h1>
-          <p className="header-subtitle">Al {formatDate(balance.fecha)}</p>
+    <div className="p-8 space-y-6">
+      <div className="flex items-center justify-between no-print">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Balance General</h1>
+          <p className="text-muted-foreground mt-1">Al {formatDate(balance.fecha.toString())}</p>
         </div>
-        <div className="page-actions">
-          <button className="btn-secondary" onClick={handlePrint}>
-            🖨️ Imprimir
-          </button>
-          <button className="btn-secondary" onClick={handleExport}>
-            📥 Exportar
-          </button>
-          <button className="btn-primary" onClick={loadBalance}>
-            🔄 Actualizar
-          </button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handlePrint}>
+            <Printer className="mr-2 h-4 w-4" />
+            Imprimir
+          </Button>
+          <Button variant="outline" onClick={handleExport}>
+            <Download className="mr-2 h-4 w-4" />
+            Exportar
+          </Button>
+          <Button onClick={loadBalance}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Actualizar
+          </Button>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="filters-section no-print">
-        <div className="filters-row">
-          <div className="filter-group">
-            <label>Fecha hasta:</label>
-            <input
-              type="date"
-              value={fechaHasta}
-              onChange={(e) => setFechaHasta(e.target.value)}
-              className="filter-input"
-            />
+      <Card className="no-print">
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="fechaHasta">Fecha hasta</Label>
+              <Input
+                id="fechaHasta"
+                type="date"
+                value={fechaHasta}
+                onChange={(e) => setFechaHasta(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="nivel">Nivel de detalle</Label>
+              <Select value={nivelFilter.toString()} onValueChange={(v) => setNivelFilter(parseInt(v))}>
+                <SelectTrigger id="nivel">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">Nivel 1 - Solo totales</SelectItem>
+                  <SelectItem value="2">Nivel 2</SelectItem>
+                  <SelectItem value="3">Nivel 3</SelectItem>
+                  <SelectItem value="4">Nivel 4 - Detallado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-
-          <div className="filter-group">
-            <label>Nivel de detalle:</label>
-            <select
-              value={nivelFilter}
-              onChange={(e) => setNivelFilter(parseInt(e.target.value))}
-              className="filter-select"
-            >
-              <option value="1">Nivel 1 - Solo totales</option>
-              <option value="2">Nivel 2</option>
-              <option value="3">Nivel 3</option>
-              <option value="4">Nivel 4 - Detallado</option>
-            </select>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Balance Summary */}
-      <div className="balance-summary-cards">
-        <div className="summary-card positive">
-          <div className="summary-label">Total Activos</div>
-          <div className="summary-value">{formatCurrency(balance.totalActivos)}</div>
-        </div>
-        <div className="summary-card">
-          <div className="summary-label">Total Pasivos + Patrimonio</div>
-          <div className="summary-value">{formatCurrency(balance.totalPasivos + balance.totalPatrimonio)}</div>
-        </div>
-        <div className={`summary-card ${Math.abs(balance.totalActivos - (balance.totalPasivos + balance.totalPatrimonio)) < 0.01 ? 'success' : 'danger'}`}>
-          <div className="summary-label">Diferencia</div>
-          <div className="summary-value">{formatCurrency(balance.totalActivos - (balance.totalPasivos + balance.totalPatrimonio))}</div>
-          <div className="summary-status">
-            {Math.abs(balance.totalActivos - (balance.totalPasivos + balance.totalPatrimonio)) < 0.01 ? '✓ Balanceado' : '⚠️ No balanceado'}
-          </div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-sm text-muted-foreground mb-2">Total Activos</div>
+            <div className="text-2xl font-bold text-green-600">{formatCurrency(balance.totalActivos)}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-sm text-muted-foreground mb-2">Total Pasivos + Patrimonio</div>
+            <div className="text-2xl font-bold">{formatCurrency(balance.totalPasivos + balance.totalPatrimonio)}</div>
+          </CardContent>
+        </Card>
+        <Card className={isBalanced ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2 mb-2">
+              {isBalanced ? (
+                <CheckCircle className="h-4 w-4 text-green-600" />
+              ) : (
+                <AlertCircle className="h-4 w-4 text-red-600" />
+              )}
+              <div className="text-sm text-muted-foreground">Diferencia</div>
+            </div>
+            <div className="text-2xl font-bold mb-2">
+              {formatCurrency(balance.totalActivos - (balance.totalPasivos + balance.totalPatrimonio))}
+            </div>
+            <Badge variant={isBalanced ? 'active' : 'inactive'}>
+              {isBalanced ? 'Balanceado' : 'No balanceado'}
+            </Badge>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Main Balance Report */}
-      <div className="balance-report">
-        <div className="balance-columns">
-          {/* ACTIVOS */}
-          <div className="balance-column">
-            <div className="column-header">
-              <h2>ACTIVOS</h2>
-            </div>
-
-            <table className="balance-table">
-              <thead>
-                <tr>
-                  <th>Código</th>
-                  <th>Cuenta</th>
-                  <th className="text-right">Saldo</th>
-                </tr>
-              </thead>
-              <tbody>
-                {balance.activos.map((cuenta) => (
-                  <tr key={cuenta.id} className={`nivel-${cuenta.nivel}`}>
-                    <td className="cuenta-codigo">{cuenta.codigo}</td>
-                    <td className="cuenta-nombre">{cuenta.nombre}</td>
-                    <td className="text-right">{formatCurrency(cuenta.saldo)}</td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="total-row">
-                  <td colSpan={2}>TOTAL ACTIVOS</td>
-                  <td className="text-right">{formatCurrency(balance.totalActivos)}</td>
-                </tr>
-              </tfoot>
-            </table>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* ACTIVOS */}
+        <Card>
+          <div className="p-4 border-b bg-muted/50">
+            <h2 className="text-xl font-bold">ACTIVOS</h2>
           </div>
-
-          {/* PASIVOS Y PATRIMONIO */}
-          <div className="balance-column">
-            <div className="column-header">
-              <h2>PASIVOS Y PATRIMONIO</h2>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b bg-muted/30">
+                    <th className="text-left p-3 text-sm font-semibold">Código</th>
+                    <th className="text-left p-3 text-sm font-semibold">Cuenta</th>
+                    <th className="text-right p-3 text-sm font-semibold">Saldo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {balance.activos.map((cuenta) => (
+                    <tr key={cuenta.id} className="border-b hover:bg-muted/50">
+                      <td className="p-3 text-sm font-mono text-blue-600">{cuenta.codigo}</td>
+                      <td className="p-3">{cuenta.nombre}</td>
+                      <td className="p-3 text-right">{formatCurrency(cuenta.saldo)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot className="bg-gray-900 text-white font-bold">
+                  <tr>
+                    <td colSpan={2} className="p-4">TOTAL ACTIVOS</td>
+                    <td className="p-4 text-right">{formatCurrency(balance.totalActivos)}</td>
+                  </tr>
+                </tfoot>
+              </table>
             </div>
+          </CardContent>
+        </Card>
 
-            <table className="balance-table">
-              <thead>
-                <tr>
-                  <th>Código</th>
-                  <th>Cuenta</th>
-                  <th className="text-right">Saldo</th>
-                </tr>
-              </thead>
-              <tbody>
-                {/* PASIVOS */}
-                <tr className="section-header">
-                  <td colSpan={3}>PASIVOS</td>
-                </tr>
-                {balance.pasivos.map((cuenta) => (
-                  <tr key={cuenta.id} className={`nivel-${cuenta.nivel}`}>
-                    <td className="cuenta-codigo">{cuenta.codigo}</td>
-                    <td className="cuenta-nombre">{cuenta.nombre}</td>
-                    <td className="text-right">{formatCurrency(cuenta.saldo)}</td>
-                  </tr>
-                ))}
-                <tr className="subtotal-row">
-                  <td colSpan={2}>Total Pasivos</td>
-                  <td className="text-right">{formatCurrency(balance.totalPasivos)}</td>
-                </tr>
-
-                {/* PATRIMONIO */}
-                <tr className="section-header">
-                  <td colSpan={3}>PATRIMONIO</td>
-                </tr>
-                {balance.patrimonio.map((cuenta) => (
-                  <tr key={cuenta.id} className={`nivel-${cuenta.nivel}`}>
-                    <td className="cuenta-codigo">{cuenta.codigo}</td>
-                    <td className="cuenta-nombre">{cuenta.nombre}</td>
-                    <td className="text-right">{formatCurrency(cuenta.saldo)}</td>
-                  </tr>
-                ))}
-                <tr className="subtotal-row">
-                  <td colSpan={2}>Total Patrimonio</td>
-                  <td className="text-right">{formatCurrency(balance.totalPatrimonio)}</td>
-                </tr>
-              </tbody>
-              <tfoot>
-                <tr className="total-row">
-                  <td colSpan={2}>TOTAL PASIVOS + PATRIMONIO</td>
-                  <td className="text-right">{formatCurrency(balance.totalPasivos + balance.totalPatrimonio)}</td>
-                </tr>
-              </tfoot>
-            </table>
+        {/* PASIVOS Y PATRIMONIO */}
+        <Card>
+          <div className="p-4 border-b bg-muted/50">
+            <h2 className="text-xl font-bold">PASIVOS Y PATRIMONIO</h2>
           </div>
-        </div>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b bg-muted/30">
+                    <th className="text-left p-3 text-sm font-semibold">Código</th>
+                    <th className="text-left p-3 text-sm font-semibold">Cuenta</th>
+                    <th className="text-right p-3 text-sm font-semibold">Saldo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {/* PASIVOS */}
+                  <tr className="bg-amber-50 dark:bg-amber-950">
+                    <td colSpan={3} className="p-3 font-bold">PASIVOS</td>
+                  </tr>
+                  {balance.pasivos.map((cuenta) => (
+                    <tr key={cuenta.id} className="border-b hover:bg-muted/50">
+                      <td className="p-3 text-sm font-mono text-blue-600">{cuenta.codigo}</td>
+                      <td className="p-3">{cuenta.nombre}</td>
+                      <td className="p-3 text-right">{formatCurrency(cuenta.saldo)}</td>
+                    </tr>
+                  ))}
+                  <tr className="bg-muted font-semibold">
+                    <td colSpan={2} className="p-3">Total Pasivos</td>
+                    <td className="p-3 text-right">{formatCurrency(balance.totalPasivos)}</td>
+                  </tr>
+
+                  {/* PATRIMONIO */}
+                  <tr className="bg-emerald-50 dark:bg-emerald-950">
+                    <td colSpan={3} className="p-3 font-bold">PATRIMONIO</td>
+                  </tr>
+                  {balance.patrimonio.map((cuenta) => (
+                    <tr key={cuenta.id} className="border-b hover:bg-muted/50">
+                      <td className="p-3 text-sm font-mono text-blue-600">{cuenta.codigo}</td>
+                      <td className="p-3">{cuenta.nombre}</td>
+                      <td className="p-3 text-right">{formatCurrency(cuenta.saldo)}</td>
+                    </tr>
+                  ))}
+                  <tr className="bg-muted font-semibold">
+                    <td colSpan={2} className="p-3">Total Patrimonio</td>
+                    <td className="p-3 text-right">{formatCurrency(balance.totalPatrimonio)}</td>
+                  </tr>
+                </tbody>
+                <tfoot className="bg-gray-900 text-white font-bold">
+                  <tr>
+                    <td colSpan={2} className="p-4">TOTAL PASIVOS + PATRIMONIO</td>
+                    <td className="p-4 text-right">{formatCurrency(balance.totalPasivos + balance.totalPatrimonio)}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Print Footer */}
-      <div className="print-only print-footer">
-        <p>Generado el {new Date().toLocaleString('es-PY')}</p>
+      <div className="print-only text-center py-8 text-muted-foreground text-sm">
+        <p className="mb-1">Generado el {new Date().toLocaleString('es-PY')}</p>
         <p>Sistema de Contabilidad - Agribusiness ERP</p>
       </div>
     </div>

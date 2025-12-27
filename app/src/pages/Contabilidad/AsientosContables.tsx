@@ -2,7 +2,14 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import contabilidadService from '../../services/contabilidad.service';
 import type { AsientoContable, TipoAsiento, EstadoAsiento } from '../../types/contabilidad';
-
+import { Button } from '../../components/ui/button';
+import { Card, CardContent } from '../../components/ui/card';
+import { Alert, AlertDescription } from '../../components/ui/alert';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Badge } from '../../components/ui/badge';
+import { RefreshCw, Plus, Eye, Check, X, Pencil, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const AsientosContables = () => {
   const [asientos, setAsientos] = useState<AsientoContable[]>([]);
@@ -95,247 +102,273 @@ const AsientosContables = () => {
     });
   };
 
-  const getEstadoBadgeClass = (estado: EstadoAsiento): string => {
-    const classes: Record<EstadoAsiento, string> = {
-      BORRADOR: 'badge-borrador',
-      CONTABILIZADO: 'badge-contabilizado',
-      ANULADO: 'badge-anulado',
+  const getEstadoBadgeVariant = (estado: EstadoAsiento) => {
+    const variants: Record<EstadoAsiento, any> = {
+      BORRADOR: 'draft',
+      CONTABILIZADO: 'approved',
+      ANULADO: 'cancelled',
     };
-    return classes[estado] || '';
+    return variants[estado] || 'default';
   };
 
-  const getTipoBadgeClass = (tipo: TipoAsiento): string => {
-    const classes: Record<TipoAsiento, string> = {
-      DIARIO: 'badge-diario',
-      AJUSTE: 'badge-ajuste',
-      CIERRE: 'badge-cierre',
-      APERTURA: 'badge-apertura',
-    };
-    return classes[tipo] || '';
+  const getTipoBadgeVariant = (tipo: TipoAsiento) => {
+    return 'outline';
   };
 
   if (loading && asientos.length === 0) {
     return (
-      <div className="asientos-container">
-        <div className="loading">Cargando asientos...</div>
+      <div className="p-8 space-y-6">
+        <div className="text-center py-8 text-muted-foreground">Cargando asientos...</div>
       </div>
     );
   }
 
   return (
-    <div className="asientos-container">
-      <div className="page-header">
-        <h1>Asientos Contables</h1>
-        <div className="page-actions">
-          <button className="btn-secondary" onClick={loadAsientos} disabled={loading}>
-            🔄 {loading ? 'Cargando...' : 'Actualizar'}
-          </button>
-          <Link to="/app/contabilidad/asientos/nuevo" className="btn-primary">
-            + Nuevo Asiento
+    <div className="p-8 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold tracking-tight">Asientos Contables</h1>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={loadAsientos} disabled={loading}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            {loading ? 'Cargando...' : 'Actualizar'}
+          </Button>
+          <Link to="/app/contabilidad/asientos/nuevo">
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Nuevo Asiento
+            </Button>
           </Link>
         </div>
       </div>
 
       {error && (
-        <div className="error-banner">
-          <span>⚠️ {error}</span>
-          <button onClick={() => setError(null)}>✕</button>
-        </div>
+        <Alert variant="destructive">
+          <AlertDescription className="flex items-center justify-between">
+            <span>{error}</span>
+            <Button variant="ghost" size="sm" onClick={() => setError(null)}>
+              <X className="h-4 w-4" />
+            </Button>
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* Filtros */}
-      <div className="filters-section">
-        <div className="filters-row">
-          <div className="filter-group">
-            <label>Tipo:</label>
-            <select
-              value={tipoFilter}
-              onChange={(e) => {
-                setTipoFilter(e.target.value as TipoAsiento | '');
-                setCurrentPage(1);
-              }}
-              className="filter-select"
-            >
-              <option value="">Todos</option>
-              <option value="DIARIO">DIARIO</option>
-              <option value="AJUSTE">AJUSTE</option>
-              <option value="CIERRE">CIERRE</option>
-              <option value="APERTURA">APERTURA</option>
-            </select>
-          </div>
-
-          <div className="filter-group">
-            <label>Estado:</label>
-            <select
-              value={estadoFilter}
-              onChange={(e) => {
-                setEstadoFilter(e.target.value as EstadoAsiento | '');
-                setCurrentPage(1);
-              }}
-              className="filter-select"
-            >
-              <option value="">Todos</option>
-              <option value="BORRADOR">BORRADOR</option>
-              <option value="CONTABILIZADO">CONTABILIZADO</option>
-              <option value="ANULADO">ANULADO</option>
-            </select>
-          </div>
-
-          <div className="filter-group">
-            <label>Desde:</label>
-            <input
-              type="date"
-              value={fechaDesde}
-              onChange={(e) => {
-                setFechaDesde(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="filter-input"
-            />
-          </div>
-
-          <div className="filter-group">
-            <label>Hasta:</label>
-            <input
-              type="date"
-              value={fechaHasta}
-              onChange={(e) => {
-                setFechaHasta(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="filter-input"
-            />
-          </div>
-        </div>
-
-        <div className="filters-summary">
-          Mostrando {asientos.length} de {total} asientos
-          {tipoFilter && ` · Tipo: ${tipoFilter}`}
-          {estadoFilter && ` · Estado: ${estadoFilter}`}
-        </div>
-      </div>
-
-      {/* Lista de asientos */}
-      <div className="asientos-card">
-        {asientos.length === 0 ? (
-          <div className="empty-state">
-            <p>No hay asientos contables registrados</p>
-            <Link to="/app/contabilidad/asientos/nuevo" className="btn-primary">
-              Crear primer asiento
-            </Link>
-          </div>
-        ) : (
-          <>
-            <div className="asientos-table-container">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Fecha</th>
-                    <th>Descripción</th>
-                    <th>Tipo</th>
-                    <th>Estado</th>
-                    <th>Líneas</th>
-                    <th className="text-right">Debe</th>
-                    <th className="text-right">Haber</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {asientos.map((asiento) => (
-                    <tr key={asiento.id} className={asiento.estado === 'ANULADO' ? 'row-anulado' : ''}>
-                      <td className="text-bold">{asiento.numero}</td>
-                      <td>{formatDate(asiento.fecha)}</td>
-                      <td>
-                        <div className="asiento-descripcion">
-                          {asiento.descripcion}
-                          {asiento.documentoRef && (
-                            <span className="doc-ref">📄 {asiento.documentoRef}</span>
-                          )}
-                        </div>
-                      </td>
-                      <td>
-                        <span className={`badge ${getTipoBadgeClass(asiento.tipo)}`}>
-                          {asiento.tipo}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`badge ${getEstadoBadgeClass(asiento.estado)}`}>
-                          {asiento.estado}
-                        </span>
-                      </td>
-                      <td className="text-center">{asiento.lineas.length}</td>
-                      <td className="text-right">{formatCurrency(asiento.totalDebe || 0)}</td>
-                      <td className="text-right">{formatCurrency(asiento.totalHaber || 0)}</td>
-                      <td>
-                        <div className="action-buttons">
-                          <Link
-                            to={`/app/contabilidad/asientos/${asiento.id}`}
-                            className="btn-icon"
-                            title="Ver detalles"
-                          >
-                            👁️
-                          </Link>
-                          {asiento.estado === 'BORRADOR' && (
-                            <>
-                              <button
-                                onClick={() => handleContabilizar(asiento.id)}
-                                className="btn-icon btn-success"
-                                title="Contabilizar"
-                              >
-                                ✓
-                              </button>
-                              <Link
-                                to={`/app/contabilidad/asientos/${asiento.id}/editar`}
-                                className="btn-icon"
-                                title="Editar"
-                              >
-                                ✏️
-                              </Link>
-                            </>
-                          )}
-                          {asiento.estado === 'CONTABILIZADO' && (
-                            <button
-                              onClick={() => handleAnular(asiento.id)}
-                              className="btn-icon btn-danger"
-                              title="Anular"
-                            >
-                              ✕
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+      <Card>
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+            <div className="space-y-2">
+              <Label htmlFor="tipo">Tipo</Label>
+              <Select
+                value={tipoFilter}
+                onValueChange={(v) => {
+                  setTipoFilter(v as TipoAsiento | '');
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger id="tipo">
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="DIARIO">DIARIO</SelectItem>
+                  <SelectItem value="AJUSTE">AJUSTE</SelectItem>
+                  <SelectItem value="CIERRE">CIERRE</SelectItem>
+                  <SelectItem value="APERTURA">APERTURA</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="pagination">
-                <button
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  className="btn-secondary btn-sm"
-                >
-                  ← Anterior
-                </button>
-                <span className="pagination-info">
-                  Página {currentPage} de {totalPages}
-                </span>
-                <button
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                  className="btn-secondary btn-sm"
-                >
-                  Siguiente →
-                </button>
+            <div className="space-y-2">
+              <Label htmlFor="estado">Estado</Label>
+              <Select
+                value={estadoFilter}
+                onValueChange={(v) => {
+                  setEstadoFilter(v as EstadoAsiento | '');
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger id="estado">
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="BORRADOR">BORRADOR</SelectItem>
+                  <SelectItem value="CONTABILIZADO">CONTABILIZADO</SelectItem>
+                  <SelectItem value="ANULADO">ANULADO</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="fechaDesde">Desde</Label>
+              <Input
+                id="fechaDesde"
+                type="date"
+                value={fechaDesde}
+                onChange={(e) => {
+                  setFechaDesde(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="fechaHasta">Hasta</Label>
+              <Input
+                id="fechaHasta"
+                type="date"
+                value={fechaHasta}
+                onChange={(e) => {
+                  setFechaHasta(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="text-sm text-muted-foreground">
+            Mostrando {asientos.length} de {total} asientos
+            {tipoFilter && ` · Tipo: ${tipoFilter}`}
+            {estadoFilter && ` · Estado: ${estadoFilter}`}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Lista de asientos */}
+      <Card>
+        <CardContent className="p-0">
+          {asientos.length === 0 ? (
+            <div className="py-12 text-center space-y-4">
+              <FileText className="h-12 w-12 mx-auto text-muted-foreground" />
+              <p className="text-muted-foreground">No hay asientos contables registrados</p>
+              <Link to="/app/contabilidad/asientos/nuevo">
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Crear primer asiento
+                </Button>
+              </Link>
+            </div>
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b bg-muted/50">
+                      <th className="text-left p-3 font-semibold">#</th>
+                      <th className="text-left p-3 font-semibold">Fecha</th>
+                      <th className="text-left p-3 font-semibold">Descripción</th>
+                      <th className="text-left p-3 font-semibold">Tipo</th>
+                      <th className="text-left p-3 font-semibold">Estado</th>
+                      <th className="text-center p-3 font-semibold">Líneas</th>
+                      <th className="text-right p-3 font-semibold">Debe</th>
+                      <th className="text-right p-3 font-semibold">Haber</th>
+                      <th className="text-center p-3 font-semibold">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {asientos.map((asiento) => (
+                      <tr
+                        key={asiento.id}
+                        className={`border-b hover:bg-muted/50 ${asiento.estado === 'ANULADO' ? 'opacity-60' : ''}`}
+                      >
+                        <td className="p-3 font-bold">{asiento.numero}</td>
+                        <td className="p-3 text-sm">{formatDate(asiento.fecha)}</td>
+                        <td className="p-3">
+                          <div className="space-y-1">
+                            <div>{asiento.descripcion}</div>
+                            {asiento.documentoRef && (
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <FileText className="h-3 w-3" />
+                                {asiento.documentoRef}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          <Badge variant={getTipoBadgeVariant(asiento.tipo)}>
+                            {asiento.tipo}
+                          </Badge>
+                        </td>
+                        <td className="p-3">
+                          <Badge variant={getEstadoBadgeVariant(asiento.estado)}>
+                            {asiento.estado}
+                          </Badge>
+                        </td>
+                        <td className="p-3 text-center">{asiento.lineas.length}</td>
+                        <td className="p-3 text-right font-medium">{formatCurrency(asiento.totalDebe || 0)}</td>
+                        <td className="p-3 text-right font-medium">{formatCurrency(asiento.totalHaber || 0)}</td>
+                        <td className="p-3">
+                          <div className="flex items-center justify-center gap-1">
+                            <Link to={`/app/contabilidad/asientos/${asiento.id}`}>
+                              <Button variant="ghost" size="sm">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </Link>
+                            {asiento.estado === 'BORRADOR' && (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleContabilizar(asiento.id)}
+                                  className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                >
+                                  <Check className="h-4 w-4" />
+                                </Button>
+                                <Link to={`/app/contabilidad/asientos/${asiento.id}/editar`}>
+                                  <Button variant="ghost" size="sm">
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                </Link>
+                              </>
+                            )}
+                            {asiento.estado === 'CONTABILIZADO' && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleAnular(asiento.id)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            )}
-          </>
-        )}
-      </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between p-4 border-t">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="mr-2 h-4 w-4" />
+                    Anterior
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    Página {currentPage} de {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Siguiente
+                    <ChevronRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

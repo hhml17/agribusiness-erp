@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react';
 import contabilidadService from '../../services/contabilidad.service';
 import type { EstadoResultados as EstadoResultadosType } from '../../types/contabilidad';
+import { Button } from '../../components/ui/button';
+import { Card, CardContent } from '../../components/ui/card';
+import { Alert, AlertDescription } from '../../components/ui/alert';
+import { Label } from '../../components/ui/label';
+import { Input } from '../../components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Printer, RefreshCw, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 
 const EstadoResultados = () => {
   const [estado, setEstado] = useState<EstadoResultadosType | null>(null);
@@ -52,170 +59,201 @@ const EstadoResultados = () => {
 
   if (loading) {
     return (
-      <div className="page-container">
-        <div className="loading">Generando Estado de Resultados...</div>
+      <div className="p-8 space-y-6">
+        <div className="text-center py-8 text-muted-foreground">Generando Estado de Resultados...</div>
       </div>
     );
   }
 
   if (error || !estado) {
     return (
-      <div className="page-container">
-        <div className="error-message">
-          <h3>Error</h3>
-          <p>{error || 'No se pudo cargar el estado de resultados'}</p>
-          <button onClick={loadEstadoResultados} className="btn btn-primary">Reintentar</button>
-        </div>
+      <div className="p-8 space-y-6">
+        <Alert variant="destructive">
+          <AlertDescription>
+            {error || 'No se pudo cargar el estado de resultados'}
+          </AlertDescription>
+        </Alert>
+        <Button onClick={loadEstadoResultados}>Reintentar</Button>
       </div>
     );
   }
 
   return (
-    <div className="page-container">
-      <div className="page-header no-print">
+    <div className="p-8 space-y-6">
+      <div className="flex items-center justify-between no-print">
         <div>
-          <h1 className="page-title">Estado de Resultados</h1>
-          <p className="page-subtitle">
-            {formatDate(estado.fechaDesde)} - {formatDate(estado.fechaHasta)}
+          <h1 className="text-3xl font-bold tracking-tight">Estado de Resultados</h1>
+          <p className="text-muted-foreground mt-1">
+            {formatDate(estado.fechaDesde.toString())} - {formatDate(estado.fechaHasta.toString())}
           </p>
         </div>
-        <div className="page-actions">
-          <button className="btn btn-secondary" onClick={() => window.print()}>
-            🖨️ Imprimir
-          </button>
-          <button className="btn btn-primary" onClick={loadEstadoResultados}>
-            🔄 Actualizar
-          </button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => window.print()}>
+            <Printer className="mr-2 h-4 w-4" />
+            Imprimir
+          </Button>
+          <Button onClick={loadEstadoResultados}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Actualizar
+          </Button>
         </div>
       </div>
 
       {/* Filtros */}
-      <div className="filters-section no-print">
-        <div className="filters-row">
-          <div className="filter-group">
-            <label>Desde:</label>
-            <input
-              type="date"
-              value={fechaDesde}
-              onChange={(e) => setFechaDesde(e.target.value)}
-              className="filter-input"
-            />
+      <Card className="no-print">
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="fechaDesde">Desde</Label>
+              <Input
+                id="fechaDesde"
+                type="date"
+                value={fechaDesde}
+                onChange={(e) => setFechaDesde(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="fechaHasta">Hasta</Label>
+              <Input
+                id="fechaHasta"
+                type="date"
+                value={fechaHasta}
+                onChange={(e) => setFechaHasta(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="nivel">Nivel de detalle</Label>
+              <Select value={nivelFilter.toString()} onValueChange={(v) => setNivelFilter(parseInt(v))}>
+                <SelectTrigger id="nivel">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">Nivel 1</SelectItem>
+                  <SelectItem value="2">Nivel 2</SelectItem>
+                  <SelectItem value="3">Nivel 3</SelectItem>
+                  <SelectItem value="4">Nivel 4 - Detallado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <div className="filter-group">
-            <label>Hasta:</label>
-            <input
-              type="date"
-              value={fechaHasta}
-              onChange={(e) => setFechaHasta(e.target.value)}
-              className="filter-input"
-            />
-          </div>
-          <div className="filter-group">
-            <label>Nivel de detalle:</label>
-            <select
-              value={nivelFilter}
-              onChange={(e) => setNivelFilter(parseInt(e.target.value))}
-              className="filter-select"
-            >
-              <option value="1">Nivel 1</option>
-              <option value="2">Nivel 2</option>
-              <option value="3">Nivel 3</option>
-              <option value="4">Nivel 4 - Detallado</option>
-            </select>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Resumen */}
-      <div className="grid grid-3 mb-3">
-        <div className="metric-card">
-          <div className="metric-label">Ingresos Totales</div>
-          <div className="metric-value positive">{formatCurrency(estado.totalIngresos)}</div>
-        </div>
-        <div className="metric-card">
-          <div className="metric-label">Gastos Totales</div>
-          <div className="metric-value negative">{formatCurrency(estado.totalGastos)}</div>
-        </div>
-        <div className="metric-card">
-          <div className="metric-label">{estado.utilidadNeta >= 0 ? 'UTILIDAD' : 'PÉRDIDA'}</div>
-          <div className={`metric-value ${estado.utilidadNeta >= 0 ? 'positive' : 'negative'}`}>
-            {formatCurrency(estado.utilidadNeta)}
-          </div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-green-100 rounded-full">
+                <TrendingUp className="h-6 w-6 text-green-600" />
+              </div>
+              <div>
+                <div className="text-sm text-muted-foreground">Ingresos Totales</div>
+                <div className="text-2xl font-bold text-green-600">{formatCurrency(estado.totalIngresos)}</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-red-100 rounded-full">
+                <TrendingDown className="h-6 w-6 text-red-600" />
+              </div>
+              <div>
+                <div className="text-sm text-muted-foreground">Gastos Totales</div>
+                <div className="text-2xl font-bold text-red-600">{formatCurrency(estado.totalGastos)}</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className={`p-3 rounded-full ${estado.utilidadNeta >= 0 ? 'bg-green-100' : 'bg-red-100'}`}>
+                <DollarSign className={`h-6 w-6 ${estado.utilidadNeta >= 0 ? 'text-green-600' : 'text-red-600'}`} />
+              </div>
+              <div>
+                <div className="text-sm text-muted-foreground">{estado.utilidadNeta >= 0 ? 'UTILIDAD' : 'PÉRDIDA'}</div>
+                <div className={`text-2xl font-bold ${estado.utilidadNeta >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatCurrency(estado.utilidadNeta)}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Reporte */}
-      <div className="card">
-        <div className="card-body">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Código</th>
-                <th>Cuenta</th>
-                <th className="text-right">Debe</th>
-                <th className="text-right">Haber</th>
-                <th className="text-right">Saldo</th>
-              </tr>
-            </thead>
-            <tbody>
-              {/* INGRESOS */}
-              <tr className="nivel-1">
-                <td colSpan={5} style={{background: '#e0f2fe', fontWeight: 700, padding: '1rem'}}>
-                  INGRESOS
-                </td>
-              </tr>
-              {estado.ingresos.map((cuenta) => (
-                <tr key={cuenta.id} className={`nivel-${cuenta.nivel}`}>
-                  <td className="text-sm" style={{fontFamily: 'monospace', color: '#3b82f6'}}>{cuenta.codigo}</td>
-                  <td>{cuenta.nombre}</td>
-                  <td className="text-right">{formatCurrency(cuenta.debe)}</td>
-                  <td className="text-right">{formatCurrency(cuenta.haber)}</td>
-                  <td className="text-right font-semibold">{formatCurrency(cuenta.total)}</td>
+      <Card>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="text-left p-4 font-semibold">Código</th>
+                  <th className="text-left p-4 font-semibold">Cuenta</th>
+                  <th className="text-right p-4 font-semibold">Debe</th>
+                  <th className="text-right p-4 font-semibold">Haber</th>
+                  <th className="text-right p-4 font-semibold">Saldo</th>
                 </tr>
-              ))}
-              <tr style={{background: '#f3f4f6', fontWeight: 700}}>
-                <td colSpan={4}>Total Ingresos</td>
-                <td className="text-right" style={{color: '#10b981'}}>{formatCurrency(estado.totalIngresos)}</td>
-              </tr>
-
-              {/* GASTOS */}
-              <tr className="nivel-1">
-                <td colSpan={5} style={{background: '#fef3c7', fontWeight: 700, padding: '1rem', marginTop: '2rem'}}>
-                  GASTOS
-                </td>
-              </tr>
-              {estado.gastos.map((cuenta) => (
-                <tr key={cuenta.id} className={`nivel-${cuenta.nivel}`}>
-                  <td className="text-sm" style={{fontFamily: 'monospace', color: '#3b82f6'}}>{cuenta.codigo}</td>
-                  <td>{cuenta.nombre}</td>
-                  <td className="text-right">{formatCurrency(cuenta.debe)}</td>
-                  <td className="text-right">{formatCurrency(cuenta.haber)}</td>
-                  <td className="text-right font-semibold">{formatCurrency(cuenta.total)}</td>
+              </thead>
+              <tbody>
+                {/* INGRESOS */}
+                <tr className="bg-sky-50 dark:bg-sky-950">
+                  <td colSpan={5} className="p-4 font-bold">INGRESOS</td>
                 </tr>
-              ))}
-              <tr style={{background: '#f3f4f6', fontWeight: 700}}>
-                <td colSpan={4}>Total Gastos</td>
-                <td className="text-right" style={{color: '#ef4444'}}>{formatCurrency(estado.totalGastos)}</td>
-              </tr>
+                {estado.ingresos.map((cuenta) => (
+                  <tr key={cuenta.id} className="border-b hover:bg-muted/50">
+                    <td className="p-4 text-sm font-mono text-blue-600">{cuenta.codigo}</td>
+                    <td className="p-4">{cuenta.nombre}</td>
+                    <td className="p-4 text-right">{formatCurrency(cuenta.debe)}</td>
+                    <td className="p-4 text-right">{formatCurrency(cuenta.haber)}</td>
+                    <td className="p-4 text-right font-semibold">{formatCurrency(cuenta.total)}</td>
+                  </tr>
+                ))}
+                <tr className="bg-muted font-bold">
+                  <td colSpan={4} className="p-4">Total Ingresos</td>
+                  <td className="p-4 text-right text-green-600">{formatCurrency(estado.totalIngresos)}</td>
+                </tr>
 
-              {/* RESULTADO */}
-              <tr style={{background: '#1f2937', color: 'white', fontWeight: 700, fontSize: '1.1rem'}}>
-                <td colSpan={4} style={{padding: '1.25rem'}}>
-                  {estado.utilidadNeta >= 0 ? 'UTILIDAD NETA' : 'PÉRDIDA NETA'}
-                </td>
-                <td className="text-right" style={{padding: '1.25rem'}}>
-                  {formatCurrency(estado.utilidadNeta)}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+                {/* GASTOS */}
+                <tr className="bg-amber-50 dark:bg-amber-950">
+                  <td colSpan={5} className="p-4 font-bold">GASTOS</td>
+                </tr>
+                {estado.gastos.map((cuenta) => (
+                  <tr key={cuenta.id} className="border-b hover:bg-muted/50">
+                    <td className="p-4 text-sm font-mono text-blue-600">{cuenta.codigo}</td>
+                    <td className="p-4">{cuenta.nombre}</td>
+                    <td className="p-4 text-right">{formatCurrency(cuenta.debe)}</td>
+                    <td className="p-4 text-right">{formatCurrency(cuenta.haber)}</td>
+                    <td className="p-4 text-right font-semibold">{formatCurrency(cuenta.total)}</td>
+                  </tr>
+                ))}
+                <tr className="bg-muted font-bold">
+                  <td colSpan={4} className="p-4">Total Gastos</td>
+                  <td className="p-4 text-right text-red-600">{formatCurrency(estado.totalGastos)}</td>
+                </tr>
+
+                {/* RESULTADO */}
+                <tr className="bg-gray-900 text-white font-bold text-lg">
+                  <td colSpan={4} className="p-5">
+                    {estado.utilidadNeta >= 0 ? 'UTILIDAD NETA' : 'PÉRDIDA NETA'}
+                  </td>
+                  <td className="p-5 text-right">
+                    {formatCurrency(estado.utilidadNeta)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Print Footer */}
-      <div className="print-only" style={{textAlign: 'center', padding: '2rem 0', color: '#6b7280', fontSize: '0.875rem'}}>
-        <p style={{margin: '0.25rem 0'}}>Generado el {new Date().toLocaleString('es-PY')}</p>
-        <p style={{margin: '0.25rem 0'}}>Sistema de Contabilidad - Agribusiness ERP</p>
+      <div className="print-only text-center py-8 text-muted-foreground text-sm">
+        <p className="mb-1">Generado el {new Date().toLocaleString('es-PY')}</p>
+        <p>Sistema de Contabilidad - Agribusiness ERP</p>
       </div>
     </div>
   );
