@@ -1,8 +1,22 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { contabilidadService } from '../../services/contabilidad.service';
+import { Button } from '../../components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../components/ui/card';
+import { Alert, AlertDescription } from '../../components/ui/alert';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
+import { Badge } from '../../components/ui/badge';
+import {
+  TrendingUp,
+  TrendingDown,
+  Plus,
+  BarChart3,
+  FileText,
+  DollarSign,
+  BookOpen,
+  Building
+} from 'lucide-react';
 import type { BalanceGeneral, EstadoResultados, AsientoContable } from '../../types/contabilidad';
-
 
 const DashboardContable = () => {
   const [balance, setBalance] = useState<BalanceGeneral | null>(null);
@@ -57,280 +71,337 @@ const DashboardContable = () => {
 
   if (loading) {
     return (
-      <div className="dashboard-container">
-        <div className="loading">Cargando dashboard...</div>
+      <div className="p-8 space-y-6">
+        <div className="text-center py-8 text-muted-foreground">Cargando dashboard...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="dashboard-container">
-        <div className="error-message">
-          <h3>Error</h3>
-          <p>{error}</p>
-          <button onClick={loadDashboardData} className="btn-primary">
-            Reintentar
-          </button>
-        </div>
+      <div className="p-8 space-y-6">
+        <Alert variant="destructive">
+          <AlertDescription>
+            {error}
+          </AlertDescription>
+        </Alert>
+        <Button onClick={loadDashboardData}>
+          Reintentar
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="page-container">
-      <div className="page-header">
+    <div className="p-8 space-y-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="page-title">Dashboard Contable</h1>
-          <p className="page-subtitle">Resumen de tu situación financiera</p>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard Contable</h1>
+          <p className="text-muted-foreground mt-1">Resumen de tu situación financiera</p>
         </div>
-        <div className="page-actions">
-          <Link to="/contabilidad/asientos/nuevo" className="btn btn-primary">
-            + Nuevo Asiento
-          </Link>
-        </div>
+        <Link to="/contabilidad/asientos/nuevo">
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            Nuevo Asiento
+          </Button>
+        </Link>
       </div>
 
       {/* Métricas principales */}
-      <div className="grid grid-auto">
-        <div className="metric-card">
-          <div className="metric-label">Total Activos</div>
-          <div className="metric-value positive">
-            {balance ? formatCurrency(balance.totalActivos) : '-'}
-          </div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Activos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              {balance ? formatCurrency(balance.totalActivos) : '-'}
+            </div>
+          </CardContent>
+        </Card>
 
-        <div className="metric-card">
-          <div className="metric-label">Total Pasivos</div>
-          <div className="metric-value">
-            {balance ? formatCurrency(balance.totalPasivos) : '-'}
-          </div>
-        </div>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Pasivos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {balance ? formatCurrency(balance.totalPasivos) : '-'}
+            </div>
+          </CardContent>
+        </Card>
 
-        <div className="metric-card">
-          <div className="metric-label">Patrimonio</div>
-          <div className="metric-value">
-            {balance ? formatCurrency(balance.totalPatrimonio) : '-'}
-          </div>
-        </div>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Patrimonio</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {balance ? formatCurrency(balance.totalPatrimonio) : '-'}
+            </div>
+          </CardContent>
+        </Card>
 
-        <div className="metric-card">
-          <div className="metric-label">Resultado del Ejercicio</div>
-          <div className={`metric-value ${estadoResultados && estadoResultados.utilidadNeta >= 0 ? 'positive' : 'negative'}`}>
-            {estadoResultados ? formatCurrency(estadoResultados.utilidadNeta) : '-'}
-          </div>
-        </div>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Resultado del Ejercicio</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold flex items-center gap-2 ${estadoResultados && estadoResultados.utilidadNeta >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {estadoResultados && estadoResultados.utilidadNeta >= 0 ? (
+                <TrendingUp className="h-5 w-5" />
+              ) : (
+                <TrendingDown className="h-5 w-5" />
+              )}
+              {estadoResultados ? formatCurrency(estadoResultados.utilidadNeta) : '-'}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Estado de Resultados resumido */}
       {estadoResultados && (
-        <div className="card">
-          <div className="card-header">
-            <h2>Estado de Resultados</h2>
-            <span className="text-muted">
+        <Card>
+          <CardHeader>
+            <CardTitle>Estado de Resultados</CardTitle>
+            <CardDescription>
               {formatDate(estadoResultados.fechaDesde.toString())} - {formatDate(estadoResultados.fechaHasta.toString())}
-            </span>
-          </div>
-          <div className="card-body">
-            <div className="results-summary">
-              <div className="result-row">
-                <span className="result-label">Ingresos Totales</span>
-                <span className="result-value positive">
-                  {formatCurrency(estadoResultados.totalIngresos)}
-                </span>
-              </div>
-              <div className="result-row">
-                <span className="result-label">Gastos Totales</span>
-                <span className="result-value negative">
-                  ({formatCurrency(estadoResultados.totalGastos)})
-                </span>
-              </div>
-              <div className="result-row total">
-                <span className="result-label">Utilidad/Pérdida Neta</span>
-                <span className={`result-value ${estadoResultados.utilidadNeta >= 0 ? 'positive' : 'negative'}`}>
-                  {formatCurrency(estadoResultados.utilidadNeta)}
-                </span>
-              </div>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between items-center pb-2 border-b">
+              <span className="text-muted-foreground">Ingresos Totales</span>
+              <span className="font-bold text-green-600">
+                {formatCurrency(estadoResultados.totalIngresos)}
+              </span>
             </div>
-            <div className="card-footer">
-              <Link to="/contabilidad/estado-resultados">Ver Estado de Resultados completo →</Link>
+            <div className="flex justify-between items-center pb-2 border-b">
+              <span className="text-muted-foreground">Gastos Totales</span>
+              <span className="font-bold text-red-600">
+                ({formatCurrency(estadoResultados.totalGastos)})
+              </span>
             </div>
-          </div>
-        </div>
+            <div className="flex justify-between items-center pt-2">
+              <span className="font-semibold">Utilidad/Pérdida Neta</span>
+              <span className={`font-bold text-lg ${estadoResultados.utilidadNeta >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {formatCurrency(estadoResultados.utilidadNeta)}
+              </span>
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Link to="/contabilidad/estado-resultados" className="text-sm text-primary hover:underline">
+              Ver Estado de Resultados completo →
+            </Link>
+          </CardFooter>
+        </Card>
       )}
 
       {/* Balance resumido */}
       {balance && (
-        <div className="card">
-          <div className="card-header">
-            <h2>Balance General</h2>
-            <span className="text-muted">Al {formatDate(balance.fecha.toString())}</span>
-          </div>
-          <div className="card-body">
-            <div className="balance-summary">
-              <div className="balance-column">
-                <h3>Activos</h3>
-                <div className="balance-total">
+        <Card>
+          <CardHeader>
+            <CardTitle>Balance General</CardTitle>
+            <CardDescription>Al {formatDate(balance.fecha.toString())}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <h3 className="font-semibold">Activos</h3>
+                <div className="text-2xl font-bold text-green-600">
                   {formatCurrency(balance.totalActivos)}
                 </div>
-                <div className="balance-items">
+                <div className="space-y-2">
                   {balance.activos.slice(0, 5).map((cuenta) => (
-                    <div key={cuenta.id} className="balance-item">
-                      <span className="item-label">{cuenta.nombre}</span>
-                      <span className="item-value">{formatCurrency(cuenta.saldo)}</span>
+                    <div key={cuenta.id} className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">{cuenta.nombre}</span>
+                      <span className="font-medium">{formatCurrency(cuenta.saldo)}</span>
                     </div>
                   ))}
                   {balance.activos.length > 5 && (
-                    <div className="balance-item more">
-                      <span className="text-muted">
-                        y {balance.activos.length - 5} cuentas más...
-                      </span>
+                    <div className="text-sm text-muted-foreground">
+                      y {balance.activos.length - 5} cuentas más...
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="balance-column">
-                <h3>Pasivos y Patrimonio</h3>
-                <div className="balance-total">
+              <div className="space-y-4">
+                <h3 className="font-semibold">Pasivos y Patrimonio</h3>
+                <div className="text-2xl font-bold">
                   {formatCurrency(balance.totalPasivos + balance.totalPatrimonio)}
                 </div>
-                <div className="balance-items">
-                  <div className="balance-section">
-                    <h4>Pasivos</h4>
-                    {balance.pasivos.slice(0, 3).map((cuenta) => (
-                      <div key={cuenta.id} className="balance-item">
-                        <span className="item-label">{cuenta.nombre}</span>
-                        <span className="item-value">{formatCurrency(cuenta.saldo)}</span>
-                      </div>
-                    ))}
+                <div className="space-y-3">
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Pasivos</h4>
+                    <div className="space-y-2">
+                      {balance.pasivos.slice(0, 3).map((cuenta) => (
+                        <div key={cuenta.id} className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">{cuenta.nombre}</span>
+                          <span className="font-medium">{formatCurrency(cuenta.saldo)}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="balance-section">
-                    <h4>Patrimonio</h4>
-                    {balance.patrimonio.slice(0, 2).map((cuenta) => (
-                      <div key={cuenta.id} className="balance-item">
-                        <span className="item-label">{cuenta.nombre}</span>
-                        <span className="item-value">{formatCurrency(cuenta.saldo)}</span>
-                      </div>
-                    ))}
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Patrimonio</h4>
+                    <div className="space-y-2">
+                      {balance.patrimonio.slice(0, 2).map((cuenta) => (
+                        <div key={cuenta.id} className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">{cuenta.nombre}</span>
+                          <span className="font-medium">{formatCurrency(cuenta.saldo)}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-            <div className="card-footer">
-              <Link to="/contabilidad/balance">Ver Balance General completo →</Link>
-            </div>
-          </div>
-        </div>
+          </CardContent>
+          <CardFooter>
+            <Link to="/contabilidad/balance" className="text-sm text-primary hover:underline">
+              Ver Balance General completo →
+            </Link>
+          </CardFooter>
+        </Card>
       )}
 
       {/* Últimos asientos */}
-      <div className="card">
-        <div className="card-header">
-          <h2>Últimos Asientos</h2>
-          <Link to="/contabilidad/asientos" className="btn-link">
-            Ver todos →
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <CardTitle>Últimos Asientos</CardTitle>
+          <Link to="/contabilidad/asientos">
+            <Button variant="ghost" size="sm">
+              Ver todos →
+            </Button>
           </Link>
-        </div>
-        <div className="card-body">
+        </CardHeader>
+        <CardContent>
           {ultimosAsientos.length === 0 ? (
-            <div className="empty-state">
-              <p>No hay asientos contables registrados</p>
-              <Link to="/contabilidad/asientos/nuevo" className="btn-primary">
-                Crear primer asiento
+            <div className="text-center py-8 space-y-4">
+              <p className="text-muted-foreground">No hay asientos contables registrados</p>
+              <Link to="/contabilidad/asientos/nuevo">
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Crear primer asiento
+                </Button>
               </Link>
             </div>
           ) : (
-            <div className="asientos-list">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Fecha</th>
-                    <th>Descripción</th>
-                    <th>Tipo</th>
-                    <th>Estado</th>
-                    <th className="text-right">Debe</th>
-                    <th className="text-right">Haber</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ultimosAsientos.map((asiento) => (
-                    <tr key={asiento.id}>
-                      <td>{asiento.numero}</td>
-                      <td>{formatDate(asiento.fecha)}</td>
-                      <td>{asiento.descripcion}</td>
-                      <td>
-                        <span className={`badge badge-${asiento.tipo.toLowerCase()}`}>
-                          {asiento.tipo}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`badge badge-${asiento.estado.toLowerCase()}`}>
-                          {asiento.estado}
-                        </span>
-                      </td>
-                      <td className="text-right">{formatCurrency(asiento.totalDebe || 0)}</td>
-                      <td className="text-right">{formatCurrency(asiento.totalHaber || 0)}</td>
-                      <td>
-                        <Link
-                          to={`/contabilidad/asientos/${asiento.id}`}
-                          className="btn-link"
-                        >
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>#</TableHead>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>Descripción</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead className="text-right">Debe</TableHead>
+                  <TableHead className="text-right">Haber</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {ultimosAsientos.map((asiento) => (
+                  <TableRow key={asiento.id}>
+                    <TableCell className="font-medium">{asiento.numero}</TableCell>
+                    <TableCell>{formatDate(asiento.fecha)}</TableCell>
+                    <TableCell>{asiento.descripcion}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {asiento.tipo}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {asiento.estado}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">{formatCurrency(asiento.totalDebe || 0)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(asiento.totalHaber || 0)}</TableCell>
+                    <TableCell>
+                      <Link to={`/contabilidad/asientos/${asiento.id}`}>
+                        <Button variant="ghost" size="sm">
                           Ver
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                        </Button>
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Accesos rápidos */}
-      <div className="quick-actions">
-        <h2>Accesos Rápidos</h2>
-        <div className="actions-grid">
-          <Link to="/contabilidad/plan-cuentas" className="action-card">
-            <div className="action-icon">📊</div>
-            <div className="action-title">Plan de Cuentas</div>
-            <div className="action-description">Gestionar cuentas contables</div>
-          </Link>
+      <Card>
+        <CardHeader>
+          <CardTitle>Accesos Rápidos</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Link to="/contabilidad/plan-cuentas">
+              <Card className="hover:bg-accent transition-colors cursor-pointer">
+                <CardContent className="pt-6 flex flex-col items-center text-center space-y-2">
+                  <BarChart3 className="h-8 w-8 text-primary" />
+                  <div className="font-semibold">Plan de Cuentas</div>
+                  <p className="text-sm text-muted-foreground">Gestionar cuentas contables</p>
+                </CardContent>
+              </Card>
+            </Link>
 
-          <Link to="/contabilidad/asientos" className="action-card">
-            <div className="action-icon">📝</div>
-            <div className="action-title">Asientos</div>
-            <div className="action-description">Registrar movimientos</div>
-          </Link>
+            <Link to="/contabilidad/asientos">
+              <Card className="hover:bg-accent transition-colors cursor-pointer">
+                <CardContent className="pt-6 flex flex-col items-center text-center space-y-2">
+                  <FileText className="h-8 w-8 text-primary" />
+                  <div className="font-semibold">Asientos</div>
+                  <p className="text-sm text-muted-foreground">Registrar movimientos</p>
+                </CardContent>
+              </Card>
+            </Link>
 
-          <Link to="/contabilidad/balance" className="action-card">
-            <div className="action-icon">💰</div>
-            <div className="action-title">Balance General</div>
-            <div className="action-description">Ver situación financiera</div>
-          </Link>
+            <Link to="/contabilidad/balance">
+              <Card className="hover:bg-accent transition-colors cursor-pointer">
+                <CardContent className="pt-6 flex flex-col items-center text-center space-y-2">
+                  <DollarSign className="h-8 w-8 text-primary" />
+                  <div className="font-semibold">Balance General</div>
+                  <p className="text-sm text-muted-foreground">Ver situación financiera</p>
+                </CardContent>
+              </Card>
+            </Link>
 
-          <Link to="/contabilidad/estado-resultados" className="action-card">
-            <div className="action-icon">📈</div>
-            <div className="action-title">Estado de Resultados</div>
-            <div className="action-description">Ver utilidad/pérdida</div>
-          </Link>
+            <Link to="/contabilidad/estado-resultados">
+              <Card className="hover:bg-accent transition-colors cursor-pointer">
+                <CardContent className="pt-6 flex flex-col items-center text-center space-y-2">
+                  <TrendingUp className="h-8 w-8 text-primary" />
+                  <div className="font-semibold">Estado de Resultados</div>
+                  <p className="text-sm text-muted-foreground">Ver utilidad/pérdida</p>
+                </CardContent>
+              </Card>
+            </Link>
 
-          <Link to="/contabilidad/mayor" className="action-card">
-            <div className="action-icon">📚</div>
-            <div className="action-title">Libro Mayor</div>
-            <div className="action-description">Consultar movimientos</div>
-          </Link>
+            <Link to="/contabilidad/mayor">
+              <Card className="hover:bg-accent transition-colors cursor-pointer">
+                <CardContent className="pt-6 flex flex-col items-center text-center space-y-2">
+                  <BookOpen className="h-8 w-8 text-primary" />
+                  <div className="font-semibold">Libro Mayor</div>
+                  <p className="text-sm text-muted-foreground">Consultar movimientos</p>
+                </CardContent>
+              </Card>
+            </Link>
 
-          <Link to="/contabilidad/centros-costo" className="action-card">
-            <div className="action-icon">🏢</div>
-            <div className="action-title">Centros de Costo</div>
-            <div className="action-description">Gestionar centros</div>
-          </Link>
-        </div>
-      </div>
+            <Link to="/contabilidad/centros-costo">
+              <Card className="hover:bg-accent transition-colors cursor-pointer">
+                <CardContent className="pt-6 flex flex-col items-center text-center space-y-2">
+                  <Building className="h-8 w-8 text-primary" />
+                  <div className="font-semibold">Centros de Costo</div>
+                  <p className="text-sm text-muted-foreground">Gestionar centros</p>
+                </CardContent>
+              </Card>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
