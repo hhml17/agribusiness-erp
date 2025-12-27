@@ -23,3 +23,6 @@ export { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, Tabl
 export { Alert, AlertDescription, AlertTitle } from './ui/alert';
 export { Badge } from './ui/badge';
 export { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from './ui/select';
+export { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+export { Textarea } from './ui/textarea';
+export { RadioGroup, RadioGroupItem } from './ui/radio-group';

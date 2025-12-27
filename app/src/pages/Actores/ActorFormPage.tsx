@@ -1,6 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Button, Card, Alert, type AlertType } from '../../components';
+import { Button } from '../../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '../../components/ui/alert';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Textarea } from '../../components/ui/textarea';
+import { RadioGroup, RadioGroupItem } from '../../components/ui/radio-group';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { AlertCircle, CheckCircle, FileText, User, Phone } from 'lucide-react';
 import { actoresService } from '../../services/api/actoresService';
 import type { Actor, CreateActorInput, UpdateActorInput } from '../../types/actores';
 
@@ -14,7 +23,7 @@ export function ActorFormPage() {
   const [activeTab, setActiveTab] = useState<TabType>('perfil');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [alert, setAlert] = useState<{ type: AlertType; message: string } | null>(null);
+  const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Form data
   const [formData, setFormData] = useState<Partial<CreateActorInput>>({
@@ -101,7 +110,7 @@ export function ActorFormPage() {
       });
     } catch (error) {
       console.error('Error loading actor:', error);
-      alert('Error al cargar el actor');
+      setAlert({ type: 'error', message: 'Error al cargar el actor' });
     } finally {
       setLoading(false);
     }
@@ -120,25 +129,25 @@ export function ActorFormPage() {
 
     // Validations
     if (!formData.numeroDocumento) {
-      alert('El número de documento es obligatorio');
+      setAlert({ type: 'error', message: 'El número de documento es obligatorio' });
       return;
     }
 
     if (!formData.nombreFantasia) {
-      alert('El nombre fantasía es obligatorio');
+      setAlert({ type: 'error', message: 'El nombre fantasía es obligatorio' });
       return;
     }
 
     // Validaciones específicas por tipo de persona
     if (formData.tipoPersona === 'FISICA') {
       if (!formData.nombre) {
-        alert('El nombre es obligatorio');
+        setAlert({ type: 'error', message: 'El nombre es obligatorio' });
         return;
       }
     } else {
       // Persona Jurídica
       if (!formData.razonSocial) {
-        alert('La razón social es obligatoria para personas jurídicas');
+        setAlert({ type: 'error', message: 'La razón social es obligatoria para personas jurídicas' });
         return;
       }
       // Copiar razonSocial a nombre para el backend
@@ -218,28 +227,38 @@ export function ActorFormPage() {
 
   if (loading) {
     return (
-      <div className="page-container">
-        <div className="loading">Cargando...</div>
+      <div className="p-8 space-y-6">
+        <div className="text-center py-8 text-muted-foreground">Cargando...</div>
       </div>
     );
   }
 
   return (
-    <div className="page-container">
+    <div className="p-8 space-y-6">
       {alert && (
-        <Alert
-          type={alert.type}
-          message={alert.message}
-          onClose={() => setAlert(null)}
-        />
+        <Alert variant={alert.type === 'error' ? 'destructive' : 'default'}>
+          {alert.type === 'error' ? (
+            <AlertCircle className="h-4 w-4" />
+          ) : (
+            <CheckCircle className="h-4 w-4" />
+          )}
+          <AlertTitle>{alert.type === 'error' ? 'Error' : 'Éxito'}</AlertTitle>
+          <AlertDescription>{alert.message}</AlertDescription>
+        </Alert>
       )}
 
-      <div className="page-header">
-        <h1>{isEditing ? 'Editar Persona' : 'Nueva Persona'}</h1>
-        <p>Gestión de persona en el sistema. Ya sea cliente, proveedor o asociado</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            {isEditing ? 'Editar Persona' : 'Nueva Persona'}
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Gestión de persona en el sistema. Ya sea cliente, proveedor o asociado
+          </p>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className="space-y-6">
         {/* Metadata Section */}
         {isEditing && (
           <Card className="metadata-card">
