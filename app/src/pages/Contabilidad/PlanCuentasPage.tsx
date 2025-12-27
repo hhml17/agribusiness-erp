@@ -1,14 +1,24 @@
 import { useState, useEffect } from 'react';
 import { cuentaContableService } from '../../services/api';
-import { Alert, type AlertType } from '../../components';
 import type { CuentaContable, CreateCuentaContableInput, TipoCuenta } from '../../types/cuentaContable';
+import { Button } from '../../components/ui/button';
+import { Card, CardContent } from '../../components/ui/card';
+import { Alert, AlertDescription } from '../../components/ui/alert';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Textarea } from '../../components/ui/textarea';
+import { Badge } from '../../components/ui/badge';
+import { Plus, Edit, Trash2, RotateCcw, AlertCircle, CheckCircle } from 'lucide-react';
 
 export function PlanCuentasPage() {
   const [cuentas, setCuentas] = useState<CuentaContable[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingCuenta, setEditingCuenta] = useState<CuentaContable | null>(null);
-  const [alert, setAlert] = useState<{ type: AlertType; message: string } | null>(null);
+  const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [showInactive, setShowInactive] = useState(false);
   const [formData, setFormData] = useState<CreateCuentaContableInput>({
     codigo: '',
@@ -178,201 +188,224 @@ export function PlanCuentasPage() {
   };
 
   if (loading) {
-    return <div className="loading">Cargando...</div>;
+    return (
+      <div className="p-8 space-y-6">
+        <div className="text-center py-8 text-muted-foreground">Cargando...</div>
+      </div>
+    );
   }
 
   return (
-    <div className="plan-cuentas-page">
+    <div className="p-8 space-y-6">
       {alert && (
-        <Alert
-          type={alert.type}
-          message={alert.message}
-          onClose={() => setAlert(null)}
-        />
+        <Alert variant={alert.type === 'error' ? 'destructive' : 'default'} className="mb-4">
+          {alert.type === 'success' ? (
+            <CheckCircle className="h-4 w-4" />
+          ) : (
+            <AlertCircle className="h-4 w-4" />
+          )}
+          <AlertDescription>{alert.message}</AlertDescription>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setAlert(null)}
+            className="absolute top-2 right-2"
+          >
+            ×
+          </Button>
+        </Alert>
       )}
 
-      <div className="page-header">
-        <h1>Plan de Cuentas Contables</h1>
-        <div className="header-actions">
-          <label className="checkbox-label">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold tracking-tight">Plan de Cuentas Contables</h1>
+        <div className="flex items-center gap-4">
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
             <input
               type="checkbox"
               checked={showInactive}
               onChange={(e) => setShowInactive(e.target.checked)}
+              className="rounded"
             />
             Mostrar inactivas
           </label>
-          <button className="btn-primary" onClick={() => handleOpenModal()}>
-            + Nueva Cuenta Contable
-          </button>
+          <Button onClick={() => handleOpenModal()}>
+            <Plus className="mr-2 h-4 w-4" />
+            Nueva Cuenta Contable
+          </Button>
         </div>
       </div>
 
-      <div className="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Código</th>
-              <th>Nombre</th>
-              <th>Tipo</th>
-              <th>Nivel</th>
-              <th>Descripción</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {cuentas.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="no-data">
-                  No hay cuentas contables registradas
-                </td>
-              </tr>
-            ) : (
-              cuentas.map((cuenta) => (
-                <tr key={cuenta.id} className={!cuenta.activo ? 'inactive-row' : ''}>
-                  <td>{cuenta.codigo}</td>
-                  <td>{cuenta.nombre}</td>
-                  <td>{getTipoLabel(cuenta.tipo)}</td>
-                  <td>{cuenta.nivel}</td>
-                  <td>{cuenta.descripcion || '-'}</td>
-                  <td>
-                    <span className={`badge ${cuenta.activo ? 'badge-active' : 'badge-inactive'}`}>
-                      {cuenta.activo ? 'Activa' : 'Inactiva'}
-                    </span>
-                  </td>
-                  <td className="actions">
-                    {cuenta.activo ? (
-                      <>
-                        <button
-                          className="btn-edit"
-                          onClick={() => handleOpenModal(cuenta)}
-                          title="Editar"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          className="btn-delete"
-                          onClick={() => handleDelete(cuenta.id)}
-                          title="Desactivar"
-                        >
-                          ❌
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        className="btn-reactivate"
-                        onClick={() => handleReactivate(cuenta.id)}
-                        title="Reactivar"
-                      >
-                        ✅
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <Card>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Código</TableHead>
+                  <TableHead>Nombre</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Nivel</TableHead>
+                  <TableHead>Descripción</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead className="text-right">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {cuentas.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      No hay cuentas contables registradas
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  cuentas.map((cuenta) => (
+                    <TableRow key={cuenta.id} className={!cuenta.activo ? 'opacity-60' : ''}>
+                      <TableCell className="font-mono text-sm">{cuenta.codigo}</TableCell>
+                      <TableCell className="font-medium">{cuenta.nombre}</TableCell>
+                      <TableCell>{getTipoLabel(cuenta.tipo)}</TableCell>
+                      <TableCell>{cuenta.nivel}</TableCell>
+                      <TableCell className="text-muted-foreground">{cuenta.descripcion || '-'}</TableCell>
+                      <TableCell>
+                        <Badge variant={cuenta.activo ? 'active' : 'inactive'}>
+                          {cuenta.activo ? 'Activa' : 'Inactiva'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          {cuenta.activo ? (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleOpenModal(cuenta)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDelete(cuenta.id)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleReactivate(cuenta.id)}
+                              className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
 
-      {showModal && (
-        <div className="modal-overlay" onClick={handleCloseModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{editingCuenta ? 'Editar Cuenta Contable' : 'Nueva Cuenta Contable'}</h2>
-              <button className="btn-close" onClick={handleCloseModal}>
-                ×
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label htmlFor="codigo">
-                  Código <span className="required">*</span>
-                </label>
-                <input
-                  type="text"
+      {/* Modal de Formulario */}
+      <Dialog open={showModal} onOpenChange={setShowModal}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>
+              {editingCuenta ? 'Editar Cuenta Contable' : 'Nueva Cuenta Contable'}
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="codigo">
+                  Código <span className="text-destructive">*</span>
+                </Label>
+                <Input
                   id="codigo"
                   value={formData.codigo}
                   onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
-                  required
-                  disabled={!!editingCuenta}
                   placeholder="Ej: 1.1.01.001"
+                  required
                 />
               </div>
 
-              <div className="form-group">
-                <label htmlFor="nombre">
-                  Nombre <span className="required">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="nombre"
-                  value={formData.nombre}
-                  onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                  required
-                  placeholder="Ej: Caja General"
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="tipo">
-                  Tipo <span className="required">*</span>
-                </label>
-                <select
-                  id="tipo"
-                  value={formData.tipo}
-                  onChange={(e) => setFormData({ ...formData, tipo: e.target.value as TipoCuenta })}
-                  required
-                >
-                  <option value="ACTIVO">Activo</option>
-                  <option value="PASIVO">Pasivo</option>
-                  <option value="PATRIMONIO">Patrimonio</option>
-                  <option value="INGRESO">Ingreso</option>
-                  <option value="EGRESO">Egreso</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="nivel">
-                  Nivel <span className="required">*</span>
-                </label>
-                <input
-                  type="number"
+              <div className="space-y-2">
+                <Label htmlFor="nivel">
+                  Nivel <span className="text-destructive">*</span>
+                </Label>
+                <Input
                   id="nivel"
+                  type="number"
+                  min="1"
+                  max="9"
                   value={formData.nivel}
                   onChange={(e) => setFormData({ ...formData, nivel: parseInt(e.target.value) })}
                   required
-                  min="1"
-                  max="5"
-                  disabled={!!editingCuenta}
                 />
               </div>
+            </div>
 
-              <div className="form-group">
-                <label htmlFor="descripcion">Descripción</label>
-                <textarea
-                  id="descripcion"
-                  value={formData.descripcion}
-                  onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-                  rows={3}
-                  placeholder="Descripción de la cuenta contable..."
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="nombre">
+                Nombre <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="nombre"
+                value={formData.nombre}
+                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                placeholder="Nombre de la cuenta"
+                required
+              />
+            </div>
 
-              <div className="modal-footer">
-                <button type="button" className="btn-secondary" onClick={handleCloseModal}>
-                  Cancelar
-                </button>
-                <button type="submit" className="btn-primary">
-                  {editingCuenta ? 'Actualizar' : 'Crear'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            <div className="space-y-2">
+              <Label htmlFor="tipo">
+                Tipo de Cuenta <span className="text-destructive">*</span>
+              </Label>
+              <Select
+                value={formData.tipo}
+                onValueChange={(value: TipoCuenta) => setFormData({ ...formData, tipo: value })}
+              >
+                <SelectTrigger id="tipo">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ACTIVO">Activo</SelectItem>
+                  <SelectItem value="PASIVO">Pasivo</SelectItem>
+                  <SelectItem value="PATRIMONIO">Patrimonio</SelectItem>
+                  <SelectItem value="INGRESO">Ingreso</SelectItem>
+                  <SelectItem value="EGRESO">Egreso</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="descripcion">Descripción</Label>
+              <Textarea
+                id="descripcion"
+                value={formData.descripcion}
+                onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+                placeholder="Descripción opcional de la cuenta"
+                rows={3}
+              />
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={handleCloseModal}>
+                Cancelar
+              </Button>
+              <Button type="submit">
+                {editingCuenta ? 'Actualizar' : 'Crear'} Cuenta
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

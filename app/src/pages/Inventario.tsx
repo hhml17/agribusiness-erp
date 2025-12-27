@@ -6,6 +6,8 @@ import { Label } from '../components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Textarea } from '../components/ui/textarea';
 import { Pencil, Trash2, Package } from 'lucide-react';
 
 export function Inventario() {
@@ -245,10 +247,9 @@ export function Inventario() {
 
             <div className="space-y-2">
               <Label htmlFor="descripcion">Descripción</Label>
-              <textarea
+              <Textarea
                 id="descripcion"
                 rows={3}
-                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 value={formData.descripcion}
                 onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
               />
@@ -257,19 +258,22 @@ export function Inventario() {
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="unidadMedida">Unidad de Medida *</Label>
-                <select
-                  id="unidadMedida"
-                  required
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                <Select
                   value={formData.unidadMedida}
-                  onChange={(e) => setFormData({ ...formData, unidadMedida: e.target.value })}
+                  onValueChange={(value) => setFormData({ ...formData, unidadMedida: value })}
+                  required
                 >
-                  <option value="kg">Kilogramos (kg)</option>
-                  <option value="litros">Litros</option>
-                  <option value="unidades">Unidades</option>
-                  <option value="dosis">Dosis</option>
-                  <option value="metros">Metros</option>
-                </select>
+                  <SelectTrigger id="unidadMedida">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="kg">Kilogramos (kg)</SelectItem>
+                    <SelectItem value="litros">Litros</SelectItem>
+                    <SelectItem value="unidades">Unidades</SelectItem>
+                    <SelectItem value="dosis">Dosis</SelectItem>
+                    <SelectItem value="metros">Metros</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="stock">Stock Actual *</Label>

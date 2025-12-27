@@ -1,14 +1,25 @@
 import { useState, useEffect } from 'react';
 import { productoService } from '../../services/api';
-import { Alert, CuentaContableSelect, type AlertType } from '../../components';
+import { CuentaContableSelect } from '../../components';
 import type { Producto, CreateProductoInput } from '../../types/producto';
+import { Button } from '../../components/ui/button';
+import { Card, CardContent } from '../../components/ui/card';
+import { Alert, AlertDescription } from '../../components/ui/alert';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Checkbox } from '../../components/ui/checkbox';
+import { Badge } from '../../components/ui/badge';
+import { Plus, Edit, Trash2, RotateCcw, AlertCircle, CheckCircle } from 'lucide-react';
 
 export function ProductosPage() {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingProducto, setEditingProducto] = useState<Producto | null>(null);
-  const [alert, setAlert] = useState<{ type: AlertType; message: string } | null>(null);
+  const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [showInactive, setShowInactive] = useState(false);
 
   // Estado inicial del formulario con todos los campos DNIT
@@ -217,152 +228,169 @@ export function ProductosPage() {
     }
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-PY', {
-      style: 'currency',
-      currency: 'PYG',
-      minimumFractionDigits: 0
-    }).format(value);
-  };
-
   if (loading) {
-    return <div className="loading">Cargando...</div>;
+    return (
+      <div className="p-8 space-y-6">
+        <div className="text-center py-8 text-muted-foreground">Cargando...</div>
+      </div>
+    );
   }
 
   return (
-    <div className="productos-page">
+    <div className="p-8 space-y-6">
       {alert && (
-        <Alert
-          type={alert.type}
-          message={alert.message}
-          onClose={() => setAlert(null)}
-        />
+        <Alert variant={alert.type === 'error' ? 'destructive' : 'default'} className="mb-4">
+          {alert.type === 'success' ? (
+            <CheckCircle className="h-4 w-4" />
+          ) : (
+            <AlertCircle className="h-4 w-4" />
+          )}
+          <AlertDescription>{alert.message}</AlertDescription>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setAlert(null)}
+            className="absolute top-2 right-2"
+          >
+            ×
+          </Button>
+        </Alert>
       )}
 
-      <div className="page-header">
-        <h1>Productos</h1>
-        <div className="header-actions">
-          <label className="checkbox-label">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold tracking-tight">Productos</h1>
+        <div className="flex items-center gap-4">
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
             <input
               type="checkbox"
               checked={showInactive}
               onChange={(e) => setShowInactive(e.target.checked)}
+              className="rounded"
             />
             Mostrar inactivos
           </label>
-          <button className="btn-primary" onClick={() => handleOpenModal()}>
-            + Nuevo Producto
-          </button>
+          <Button onClick={() => handleOpenModal()}>
+            <Plus className="mr-2 h-4 w-4" />
+            Nuevo Producto
+          </Button>
         </div>
       </div>
 
-      <div className="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Código</th>
-              <th>Nombre</th>
-              <th>Tipo</th>
-              <th>Unidad Compra</th>
-              <th>IVA</th>
-              <th>Cuenta Inventario</th>
-              <th>Cuenta Costo</th>
-              <th>Cuenta Ingreso</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {productos.length === 0 ? (
-              <tr>
-                <td colSpan={10} className="no-data">
-                  No hay productos registrados
-                </td>
-              </tr>
-            ) : (
-              productos.map((producto) => (
-                <tr key={producto.id} className={!producto.activo ? 'inactive-row' : ''}>
-                  <td>{producto.codigo}</td>
-                  <td>{producto.nombre}</td>
-                  <td>{producto.tipoArticulo}</td>
-                  <td>{producto.unidadCompra}</td>
-                  <td>{producto.tasaIva}%</td>
-                  <td>
-                    {producto.cuentaInventario
-                      ? `${producto.cuentaInventario.codigo} - ${producto.cuentaInventario.nombre}`
-                      : '-'}
-                  </td>
-                  <td>
-                    {producto.cuentaCosto
-                      ? `${producto.cuentaCosto.codigo} - ${producto.cuentaCosto.nombre}`
-                      : '-'}
-                  </td>
-                  <td>
-                    {producto.cuentaIngreso
-                      ? `${producto.cuentaIngreso.codigo} - ${producto.cuentaIngreso.nombre}`
-                      : '-'}
-                  </td>
-                  <td>
-                    <span className={`badge ${producto.activo ? 'badge-active' : 'badge-inactive'}`}>
-                      {producto.activo ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </td>
-                  <td className="actions">
-                    {producto.activo ? (
-                      <>
-                        <button
-                          className="btn-edit"
-                          onClick={() => handleOpenModal(producto)}
-                          title="Editar"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          className="btn-delete"
-                          onClick={() => handleDelete(producto.id)}
-                          title="Desactivar"
-                        >
-                          ❌
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        className="btn-reactivate"
-                        onClick={() => handleReactivate(producto.id)}
-                        title="Reactivar"
-                      >
-                        ✅
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <Card>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Código</TableHead>
+                  <TableHead>Nombre</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Unidad Compra</TableHead>
+                  <TableHead>IVA</TableHead>
+                  <TableHead>Cuenta Inventario</TableHead>
+                  <TableHead>Cuenta Costo</TableHead>
+                  <TableHead>Cuenta Ingreso</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead className="text-right">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {productos.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                      No hay productos registrados
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  productos.map((producto) => (
+                    <TableRow key={producto.id} className={!producto.activo ? 'opacity-60' : ''}>
+                      <TableCell className="font-mono text-sm">{producto.codigo}</TableCell>
+                      <TableCell className="font-medium">{producto.nombre}</TableCell>
+                      <TableCell>{producto.tipoArticulo}</TableCell>
+                      <TableCell>{producto.unidadCompra}</TableCell>
+                      <TableCell>{producto.tasaIva}%</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {producto.cuentaInventario
+                          ? `${producto.cuentaInventario.codigo} - ${producto.cuentaInventario.nombre}`
+                          : '-'}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {producto.cuentaCosto
+                          ? `${producto.cuentaCosto.codigo} - ${producto.cuentaCosto.nombre}`
+                          : '-'}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {producto.cuentaIngreso
+                          ? `${producto.cuentaIngreso.codigo} - ${producto.cuentaIngreso.nombre}`
+                          : '-'}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={producto.activo ? 'active' : 'inactive'}>
+                          {producto.activo ? 'Activo' : 'Inactivo'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          {producto.activo ? (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleOpenModal(producto)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDelete(producto.id)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleReactivate(producto.id)}
+                              className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
 
-      {showModal && (
-        <div className="modal-overlay" onClick={handleCloseModal}>
-          <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{editingProducto ? 'Editar Producto' : 'Nuevo Producto'}</h2>
-              <button className="btn-close" onClick={handleCloseModal}>
-                ×
-              </button>
-            </div>
+      {/* Modal de Formulario */}
+      <Dialog open={showModal} onOpenChange={setShowModal}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingProducto ? 'Editar Producto' : 'Nuevo Producto'}
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* ========== SECCIÓN 1: IDENTIFICACIÓN ========== */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                📋 Identificación
+              </h3>
 
-            <form onSubmit={handleSubmit}>
-              {/* ========== SECCIÓN 1: IDENTIFICACIÓN ========== */}
-              <h3 className="form-section-title">📋 Identificación</h3>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="codigo">
-                    Código <span className="required">*</span>
-                  </label>
-                  <input
-                    type="text"
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="codigo">
+                    Código <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
                     id="codigo"
                     value={formData.codigo}
                     onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
@@ -372,12 +400,11 @@ export function ProductosPage() {
                   />
                 </div>
 
-                <div className="form-group">
-                  <label htmlFor="nombre">
-                    Nombre <span className="required">*</span>
-                  </label>
-                  <input
-                    type="text"
+                <div className="space-y-2">
+                  <Label htmlFor="nombre">
+                    Nombre <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
                     id="nombre"
                     value={formData.nombre}
                     onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
@@ -387,11 +414,10 @@ export function ProductosPage() {
                 </div>
               </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="categoria">Categoría</label>
-                  <input
-                    type="text"
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="categoria">Categoría</Label>
+                  <Input
                     id="categoria"
                     value={formData.categoria}
                     onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
@@ -399,10 +425,9 @@ export function ProductosPage() {
                   />
                 </div>
 
-                <div className="form-group">
-                  <label htmlFor="descripcion">Descripción</label>
-                  <input
-                    type="text"
+                <div className="space-y-2">
+                  <Label htmlFor="descripcion">Descripción</Label>
+                  <Input
                     id="descripcion"
                     value={formData.descripcion}
                     onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
@@ -410,89 +435,113 @@ export function ProductosPage() {
                   />
                 </div>
               </div>
+            </div>
 
-              {/* ========== SECCIÓN 2: DATOS DNIT ========== */}
-              <h3 className="form-section-title">📊 Datos DNIT Paraguay</h3>
+            {/* ========== SECCIÓN 2: DATOS DNIT ========== */}
+            <div className="space-y-4 pt-4 border-t">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                📊 Datos DNIT Paraguay
+              </h3>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="tipoArticulo">
-                    Tipo de Artículo <span className="required">*</span>
-                  </label>
-                  <select
-                    id="tipoArticulo"
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="tipoArticulo">
+                    Tipo de Artículo <span className="text-destructive">*</span>
+                  </Label>
+                  <Select
                     value={formData.tipoArticulo}
-                    onChange={(e) => setFormData({ ...formData, tipoArticulo: e.target.value })}
+                    onValueChange={(value) => setFormData({ ...formData, tipoArticulo: value })}
                     required
                   >
-                    <option value="INSUMO">Insumo</option>
-                    <option value="ACTIVO_FIJO">Activo Fijo</option>
-                    <option value="ANIMAL">Animal</option>
-                    <option value="GASTO_DIRECTO">Gasto Directo</option>
-                    <option value="SERVICIO">Servicio</option>
-                  </select>
+                    <SelectTrigger id="tipoArticulo">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="INSUMO">Insumo</SelectItem>
+                      <SelectItem value="ACTIVO_FIJO">Activo Fijo</SelectItem>
+                      <SelectItem value="ANIMAL">Animal</SelectItem>
+                      <SelectItem value="GASTO_DIRECTO">Gasto Directo</SelectItem>
+                      <SelectItem value="SERVICIO">Servicio</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                <div className="form-group">
-                  <label htmlFor="tasaIva">
-                    Tasa de IVA <span className="required">*</span>
-                  </label>
-                  <select
-                    id="tasaIva"
-                    value={formData.tasaIva}
-                    onChange={(e) => setFormData({ ...formData, tasaIva: parseFloat(e.target.value) })}
+                <div className="space-y-2">
+                  <Label htmlFor="tasaIva">
+                    Tasa de IVA <span className="text-destructive">*</span>
+                  </Label>
+                  <Select
+                    value={String(formData.tasaIva)}
+                    onValueChange={(value) => setFormData({ ...formData, tasaIva: parseFloat(value) })}
                     required
                   >
-                    <option value="10">10% (Gravado)</option>
-                    <option value="5">5% (Reducido)</option>
-                    <option value="0">0% (Exento)</option>
-                  </select>
+                    <SelectTrigger id="tasaIva">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10">10% (Gravado)</SelectItem>
+                      <SelectItem value="5">5% (Reducido)</SelectItem>
+                      <SelectItem value="0">0% (Exento)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
+            </div>
 
-              {/* ========== SECCIÓN 3: UNIDADES DE MEDIDA ========== */}
-              <h3 className="form-section-title">📏 Unidades de Medida</h3>
+            {/* ========== SECCIÓN 3: UNIDADES DE MEDIDA ========== */}
+            <div className="space-y-4 pt-4 border-t">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                📏 Unidades de Medida
+              </h3>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="unidadCompra">
-                    Unidad de Compra <span className="required">*</span>
-                  </label>
-                  <select
-                    id="unidadCompra"
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="unidadCompra">
+                    Unidad de Compra <span className="text-destructive">*</span>
+                  </Label>
+                  <Select
                     value={formData.unidadCompra}
-                    onChange={(e) => setFormData({ ...formData, unidadCompra: e.target.value })}
+                    onValueChange={(value) => setFormData({ ...formData, unidadCompra: value })}
                     required
                   >
-                    <option value="GLOBAL">Global</option>
-                    <option value="TON">Toneladas (TON)</option>
-                    <option value="M3">Metros Cúbicos (M3)</option>
-                    <option value="UNIDAD">Unidad</option>
-                    <option value="KG">Kilogramos (KG)</option>
-                    <option value="L">Litros (L)</option>
-                  </select>
-                  <small>Unidad usada en facturación y compras</small>
+                    <SelectTrigger id="unidadCompra">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="GLOBAL">Global</SelectItem>
+                      <SelectItem value="TON">Toneladas (TON)</SelectItem>
+                      <SelectItem value="M3">Metros Cúbicos (M3)</SelectItem>
+                      <SelectItem value="UNIDAD">Unidad</SelectItem>
+                      <SelectItem value="KG">Kilogramos (KG)</SelectItem>
+                      <SelectItem value="L">Litros (L)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">Unidad usada en facturación y compras</p>
                 </div>
 
-                <div className="form-group">
-                  <label htmlFor="unidadControl">Unidad de Control (Stock)</label>
-                  <select
-                    id="unidadControl"
+                <div className="space-y-2">
+                  <Label htmlFor="unidadControl">Unidad de Control (Stock)</Label>
+                  <Select
                     value={formData.unidadControl}
-                    onChange={(e) => setFormData({ ...formData, unidadControl: e.target.value })}
+                    onValueChange={(value) => setFormData({ ...formData, unidadControl: value })}
                   >
-                    <option value="">Sin control específico</option>
-                    <option value="L">Litros (L)</option>
-                    <option value="KG">Kilogramos (KG)</option>
-                    <option value="CABEZA">Cabezas (Ganado)</option>
-                    <option value="UNIDAD">Unidades</option>
-                  </select>
-                  <small>Unidad usada para control de inventario</small>
+                    <SelectTrigger id="unidadControl">
+                      <SelectValue placeholder="Sin control específico" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sin control específico</SelectItem>
+                      <SelectItem value="L">Litros (L)</SelectItem>
+                      <SelectItem value="KG">Kilogramos (KG)</SelectItem>
+                      <SelectItem value="CABEZA">Cabezas (Ganado)</SelectItem>
+                      <SelectItem value="UNIDAD">Unidades</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">Unidad usada para control de inventario</p>
                 </div>
 
-                <div className="form-group">
-                  <label htmlFor="factorConversion">Factor de Conversión</label>
-                  <input
+                <div className="space-y-2">
+                  <Label htmlFor="factorConversion">Factor de Conversión</Label>
+                  <Input
                     type="number"
                     id="factorConversion"
                     value={formData.factorConversion || ''}
@@ -504,44 +553,57 @@ export function ProductosPage() {
                     step="0.001"
                     placeholder="Ej: 1000 (1 TON = 1000 KG)"
                   />
-                  <small>1 Unidad Compra = X Unidades Control</small>
+                  <p className="text-xs text-muted-foreground">1 Unidad Compra = X Unidades Control</p>
                 </div>
               </div>
+            </div>
 
-              {/* ========== SECCIÓN 4: CONTROL DE INVENTARIO ========== */}
-              <h3 className="form-section-title">📦 Control de Inventario</h3>
+            {/* ========== SECCIÓN 4: CONTROL DE INVENTARIO ========== */}
+            <div className="space-y-4 pt-4 border-t">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                📦 Control de Inventario
+              </h3>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="checkbox-label-block">
-                    <input
-                      type="checkbox"
-                      checked={formData.controlaStock}
-                      onChange={(e) => setFormData({ ...formData, controlaStock: e.target.checked })}
-                    />
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="controlaStock"
+                    checked={formData.controlaStock}
+                    onCheckedChange={(checked) => setFormData({ ...formData, controlaStock: checked as boolean })}
+                  />
+                  <label
+                    htmlFor="controlaStock"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
                     Controla Stock
                   </label>
-                  <small>Activar si este producto requiere control de inventario</small>
                 </div>
+                <p className="text-xs text-muted-foreground ml-6">
+                  Activar si este producto requiere control de inventario
+                </p>
 
                 {formData.controlaStock && (
-                  <>
-                    <div className="form-group">
-                      <label htmlFor="metodoValuacion">Método de Valuación</label>
-                      <select
-                        id="metodoValuacion"
+                  <div className="grid grid-cols-2 gap-4 ml-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="metodoValuacion">Método de Valuación</Label>
+                      <Select
                         value={formData.metodoValuacion}
-                        onChange={(e) => setFormData({ ...formData, metodoValuacion: e.target.value })}
+                        onValueChange={(value) => setFormData({ ...formData, metodoValuacion: value })}
                       >
-                        <option value="PROMEDIO">Promedio Ponderado</option>
-                        <option value="FIFO">FIFO (Primero en Entrar, Primero en Salir)</option>
-                        <option value="IDENTIFICADO">Identificado (Ganado)</option>
-                      </select>
+                        <SelectTrigger id="metodoValuacion">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="PROMEDIO">Promedio Ponderado</SelectItem>
+                          <SelectItem value="FIFO">FIFO (Primero en Entrar, Primero en Salir)</SelectItem>
+                          <SelectItem value="IDENTIFICADO">Identificado (Ganado)</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
 
-                    <div className="form-group">
-                      <label htmlFor="stockMinimo">Stock Mínimo</label>
-                      <input
+                    <div className="space-y-2">
+                      <Label htmlFor="stockMinimo">Stock Mínimo</Label>
+                      <Input
                         type="number"
                         id="stockMinimo"
                         value={formData.stockMinimo}
@@ -550,126 +612,152 @@ export function ProductosPage() {
                         step="0.01"
                       />
                     </div>
-                  </>
+                  </div>
                 )}
               </div>
+            </div>
 
-              {/* ========== SECCIÓN 5: CARACTERÍSTICAS ESPECIALES ========== */}
-              <h3 className="form-section-title">🌾 Características Especiales</h3>
+            {/* ========== SECCIÓN 5: CARACTERÍSTICAS ESPECIALES ========== */}
+            <div className="space-y-4 pt-4 border-t">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                🌾 Características Especiales
+              </h3>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="checkbox-label-block">
-                    <input
-                      type="checkbox"
+              <div className="space-y-4">
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="esAnimal"
                       checked={formData.esAnimal}
-                      onChange={(e) => setFormData({
+                      onCheckedChange={(checked) => setFormData({
                         ...formData,
-                        esAnimal: e.target.checked,
-                        especieAnimal: e.target.checked ? formData.especieAnimal : ''
+                        esAnimal: checked as boolean,
+                        especieAnimal: checked ? formData.especieAnimal : ''
                       })}
                     />
-                    Es Animal (Ganadería)
-                  </label>
+                    <label
+                      htmlFor="esAnimal"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Es Animal (Ganadería)
+                    </label>
+                  </div>
+
+                  {formData.esAnimal && (
+                    <div className="space-y-2 ml-6">
+                      <Label htmlFor="especieAnimal">Especie Animal</Label>
+                      <Select
+                        value={formData.especieAnimal}
+                        onValueChange={(value) => setFormData({ ...formData, especieAnimal: value })}
+                      >
+                        <SelectTrigger id="especieAnimal">
+                          <SelectValue placeholder="Seleccionar..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="BOVINO">Bovino</SelectItem>
+                          <SelectItem value="EQUINO">Equino</SelectItem>
+                          <SelectItem value="OVINO">Ovino</SelectItem>
+                          <SelectItem value="PORCINO">Porcino</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
 
-                {formData.esAnimal && (
-                  <div className="form-group">
-                    <label htmlFor="especieAnimal">Especie Animal</label>
-                    <select
-                      id="especieAnimal"
-                      value={formData.especieAnimal}
-                      onChange={(e) => setFormData({ ...formData, especieAnimal: e.target.value })}
-                    >
-                      <option value="">Seleccionar...</option>
-                      <option value="BOVINO">Bovino</option>
-                      <option value="EQUINO">Equino</option>
-                      <option value="OVINO">Ovino</option>
-                      <option value="PORCINO">Porcino</option>
-                    </select>
-                  </div>
-                )}
-
-                <div className="form-group">
-                  <label className="checkbox-label-block">
-                    <input
-                      type="checkbox"
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="esInsumoAgricola"
                       checked={formData.esInsumoAgricola}
-                      onChange={(e) => setFormData({
+                      onCheckedChange={(checked) => setFormData({
                         ...formData,
-                        esInsumoAgricola: e.target.checked,
-                        categoriaAgricola: e.target.checked ? formData.categoriaAgricola : ''
+                        esInsumoAgricola: checked as boolean,
+                        categoriaAgricola: checked ? formData.categoriaAgricola : ''
                       })}
                     />
-                    Es Insumo Agrícola
-                  </label>
-                </div>
-
-                {formData.esInsumoAgricola && (
-                  <div className="form-group">
-                    <label htmlFor="categoriaAgricola">Categoría Agrícola</label>
-                    <select
-                      id="categoriaAgricola"
-                      value={formData.categoriaAgricola}
-                      onChange={(e) => setFormData({ ...formData, categoriaAgricola: e.target.value })}
+                    <label
+                      htmlFor="esInsumoAgricola"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
-                      <option value="">Seleccionar...</option>
-                      <option value="SEMILLA">Semilla</option>
-                      <option value="FERTILIZANTE">Fertilizante</option>
-                      <option value="AGROQUIMICO">Agroquímico</option>
-                      <option value="HERBICIDA">Herbicida</option>
-                    </select>
+                      Es Insumo Agrícola
+                    </label>
                   </div>
-                )}
+
+                  {formData.esInsumoAgricola && (
+                    <div className="space-y-2 ml-6">
+                      <Label htmlFor="categoriaAgricola">Categoría Agrícola</Label>
+                      <Select
+                        value={formData.categoriaAgricola}
+                        onValueChange={(value) => setFormData({ ...formData, categoriaAgricola: value })}
+                      >
+                        <SelectTrigger id="categoriaAgricola">
+                          <SelectValue placeholder="Seleccionar..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="SEMILLA">Semilla</SelectItem>
+                          <SelectItem value="FERTILIZANTE">Fertilizante</SelectItem>
+                          <SelectItem value="AGROQUIMICO">Agroquímico</SelectItem>
+                          <SelectItem value="HERBICIDA">Herbicida</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
               </div>
+            </div>
 
-              {/* ========== SECCIÓN 6: CUENTAS CONTABLES ========== */}
-              <h3 className="form-section-title">💼 Cuentas Contables</h3>
+            {/* ========== SECCIÓN 6: CUENTAS CONTABLES ========== */}
+            <div className="space-y-4 pt-4 border-t">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                💼 Cuentas Contables
+              </h3>
 
-              <CuentaContableSelect
-                label="Cuenta de Inventario (Activo)"
-                tipo="ACTIVO"
-                value={formData.cuentaInventarioId || ''}
-                onChange={(value) => setFormData({ ...formData, cuentaInventarioId: value })}
-                required={false}
-              />
+              <div className="space-y-4">
+                <CuentaContableSelect
+                  label="Cuenta de Inventario (Activo)"
+                  tipo="ACTIVO"
+                  value={formData.cuentaInventarioId || ''}
+                  onChange={(value) => setFormData({ ...formData, cuentaInventarioId: value })}
+                  required={false}
+                />
 
-              <CuentaContableSelect
-                label="Cuenta de Costo (Gasto)"
-                tipo="GASTO"
-                value={formData.cuentaCostoId || ''}
-                onChange={(value) => setFormData({ ...formData, cuentaCostoId: value })}
-                required={false}
-              />
+                <CuentaContableSelect
+                  label="Cuenta de Costo (Gasto)"
+                  tipo="GASTO"
+                  value={formData.cuentaCostoId || ''}
+                  onChange={(value) => setFormData({ ...formData, cuentaCostoId: value })}
+                  required={false}
+                />
 
-              <CuentaContableSelect
-                label="Cuenta de Ingreso"
-                tipo="INGRESO"
-                value={formData.cuentaIngresoId || ''}
-                onChange={(value) => setFormData({ ...formData, cuentaIngresoId: value })}
-                required={false}
-              />
+                <CuentaContableSelect
+                  label="Cuenta de Ingreso"
+                  tipo="INGRESO"
+                  value={formData.cuentaIngresoId || ''}
+                  onChange={(value) => setFormData({ ...formData, cuentaIngresoId: value })}
+                  required={false}
+                />
 
-              <CuentaContableSelect
-                label="Cuenta IVA Crédito Fiscal"
-                tipo="ACTIVO"
-                value={formData.cuentaIvaId || ''}
-                onChange={(value) => setFormData({ ...formData, cuentaIvaId: value })}
-                required={false}
-              />
-
-              <div className="modal-footer">
-                <button type="button" className="btn-secondary" onClick={handleCloseModal}>
-                  Cancelar
-                </button>
-                <button type="submit" className="btn-primary">
-                  {editingProducto ? 'Actualizar' : 'Crear'}
-                </button>
+                <CuentaContableSelect
+                  label="Cuenta IVA Crédito Fiscal"
+                  tipo="ACTIVO"
+                  value={formData.cuentaIvaId || ''}
+                  onChange={(value) => setFormData({ ...formData, cuentaIvaId: value })}
+                  required={false}
+                />
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+            </div>
+
+            <DialogFooter className="pt-4 border-t">
+              <Button type="button" variant="outline" onClick={handleCloseModal}>
+                Cancelar
+              </Button>
+              <Button type="submit">
+                {editingProducto ? 'Actualizar' : 'Crear'} Producto
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
