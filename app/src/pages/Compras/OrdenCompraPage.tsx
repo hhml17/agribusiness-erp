@@ -128,12 +128,12 @@ export function OrdenCompraPage() {
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <CardTitle className="text-xl font-semibold">Listado de Órdenes</CardTitle>
           <div className="flex gap-2 items-center">
-            <Select value={estadoFiltro} onValueChange={setEstadoFiltro}>
+            <Select value={estadoFiltro || 'all'} onValueChange={(v) => setEstadoFiltro(v === 'all' ? '' : v)}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Todos los estados" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos los estados</SelectItem>
+                <SelectItem value="all">Todos los estados</SelectItem>
                 <SelectItem value="BORRADOR">Borrador</SelectItem>
                 <SelectItem value="APROBADA">Aprobada</SelectItem>
                 <SelectItem value="PARCIAL">Parcial</SelectItem>

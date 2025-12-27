@@ -240,12 +240,12 @@ const PlanCuentas = () => {
 
             <div className="space-y-2">
               <Label htmlFor="tipo">Tipo</Label>
-              <Select value={tipoFilter} onValueChange={(v) => setTipoFilter(v as TipoCuenta | '')}>
+              <Select value={tipoFilter || 'all'} onValueChange={(v) => setTipoFilter(v === 'all' ? '' : v as TipoCuenta)}>
                 <SelectTrigger id="tipo">
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
                   <SelectItem value="ACTIVO">ACTIVO</SelectItem>
                   <SelectItem value="PASIVO">PASIVO</SelectItem>
                   <SelectItem value="PATRIMONIO">PATRIMONIO</SelectItem>
@@ -257,12 +257,12 @@ const PlanCuentas = () => {
 
             <div className="space-y-2">
               <Label htmlFor="nivel">Nivel</Label>
-              <Select value={nivelFilter.toString()} onValueChange={(v) => setNivelFilter(v ? parseInt(v) : '')}>
+              <Select value={nivelFilter ? nivelFilter.toString() : 'all'} onValueChange={(v) => setNivelFilter(v === 'all' ? '' : parseInt(v))}>
                 <SelectTrigger id="nivel">
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
                   <SelectItem value="1">Nivel 1</SelectItem>
                   <SelectItem value="2">Nivel 2</SelectItem>
                   <SelectItem value="3">Nivel 3</SelectItem>

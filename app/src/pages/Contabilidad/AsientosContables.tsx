@@ -159,9 +159,9 @@ const AsientosContables = () => {
             <div className="space-y-2">
               <Label htmlFor="tipo">Tipo</Label>
               <Select
-                value={tipoFilter}
+                value={tipoFilter || 'all'}
                 onValueChange={(v) => {
-                  setTipoFilter(v as TipoAsiento | '');
+                  setTipoFilter(v === 'all' ? '' : v as TipoAsiento);
                   setCurrentPage(1);
                 }}
               >
@@ -169,7 +169,7 @@ const AsientosContables = () => {
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
                   <SelectItem value="DIARIO">DIARIO</SelectItem>
                   <SelectItem value="AJUSTE">AJUSTE</SelectItem>
                   <SelectItem value="CIERRE">CIERRE</SelectItem>
@@ -181,9 +181,9 @@ const AsientosContables = () => {
             <div className="space-y-2">
               <Label htmlFor="estado">Estado</Label>
               <Select
-                value={estadoFilter}
+                value={estadoFilter || 'all'}
                 onValueChange={(v) => {
-                  setEstadoFilter(v as EstadoAsiento | '');
+                  setEstadoFilter(v === 'all' ? '' : v as EstadoAsiento);
                   setCurrentPage(1);
                 }}
               >
@@ -191,7 +191,7 @@ const AsientosContables = () => {
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
                   <SelectItem value="BORRADOR">BORRADOR</SelectItem>
                   <SelectItem value="CONTABILIZADO">CONTABILIZADO</SelectItem>
                   <SelectItem value="ANULADO">ANULADO</SelectItem>
