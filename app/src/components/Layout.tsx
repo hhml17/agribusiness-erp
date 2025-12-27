@@ -1,7 +1,8 @@
 import { useMsal } from '@azure/msal-react';
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import '../styles/Layout.css';
+import { Button } from './ui/button';
+import { ChevronDown, LogOut, BarChart3 } from 'lucide-react';
 
 interface Tenant {
   id: string;
@@ -152,49 +153,62 @@ export function Layout({ children }: LayoutProps) {
   };
 
   return (
-    <div className="dashboard-layout">
+    <div className="flex h-screen bg-background">
       {/* Sidebar */}
-      <aside className="dashboard-sidebar">
-        <div className="sidebar-header">
-          <div className="app-icon">🌾</div>
-          <h2>Agribusiness ERP</h2>
+      <aside className="w-64 bg-card border-r border-border flex flex-col">
+        {/* App Header */}
+        <div className="p-4 border-b border-border">
+          <div className="flex items-center gap-3">
+            <div className="text-3xl">🌾</div>
+            <h2 className="text-lg font-semibold text-foreground">Agribusiness ERP</h2>
+          </div>
         </div>
 
         {/* Tenant Selector */}
         {selectedTenant && (
-          <div className="tenant-selector">
-            <div className="tenant-info">
-              <div className="tenant-name">{selectedTenant.nombre}</div>
-              <div className="tenant-ruc">RUC: {selectedTenant.ruc}</div>
-              <div className="tenant-role">{selectedTenant.role}</div>
+          <div className="p-4 border-b border-border bg-muted/50">
+            <div className="space-y-1">
+              <div className="font-medium text-sm text-foreground">{selectedTenant.nombre}</div>
+              <div className="text-xs text-muted-foreground">RUC: {selectedTenant.ruc}</div>
+              <div className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-md inline-block">
+                {selectedTenant.role}
+              </div>
             </div>
           </div>
         )}
 
         {/* Navigation */}
-        <nav className="sidebar-nav">
+        <nav className="flex-1 overflow-y-auto p-2">
           {navigationGroups.map((group) => (
-            <div key={group.label} className="nav-group">
+            <div key={group.label} className="mb-2">
               <button
-                className="nav-group-header"
+                className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-foreground hover:bg-accent rounded-md transition-colors"
                 onClick={() => toggleGroup(group.label)}
               >
-                <span className="nav-group-icon">{group.icon}</span>
-                <span className="nav-group-label">{group.label}</span>
-                <span className={`nav-group-arrow ${expandedGroups.has(group.label) ? 'expanded' : ''}`}>
-                  ▼
-                </span>
+                <div className="flex items-center gap-2">
+                  <span>{group.icon}</span>
+                  <span>{group.label}</span>
+                </div>
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform ${
+                    expandedGroups.has(group.label) ? 'rotate-180' : ''
+                  }`}
+                />
               </button>
               {expandedGroups.has(group.label) && (
-                <div className="nav-group-items">
+                <div className="ml-2 mt-1 space-y-1">
                   {group.items.map((item) => (
                     <Link
                       key={item.path}
                       to={item.path}
-                      className={`nav-item ${isActivePath(item.path) ? 'active' : ''}`}
+                      className={`flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors ${
+                        isActivePath(item.path)
+                          ? 'bg-primary text-primary-foreground font-medium'
+                          : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                      }`}
                     >
-                      <span className="nav-icon">{item.icon}</span>
-                      {item.label}
+                      <span>{item.icon}</span>
+                      <span>{item.label}</span>
                     </Link>
                   ))}
                 </div>
@@ -204,36 +218,49 @@ export function Layout({ children }: LayoutProps) {
         </nav>
 
         {/* External Links */}
-        <div className="sidebar-footer">
-          <a href="/portal" className="nav-item">
-            <span className="nav-icon">📊</span>
-            Portal BI
+        <div className="p-2 border-t border-border">
+          <a
+            href="/portal"
+            className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground rounded-md transition-colors"
+          >
+            <BarChart3 className="h-4 w-4" />
+            <span>Portal BI</span>
           </a>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="dashboard-main">
+      <main className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="dashboard-header">
-          <div className="header-left">
-            <h1>{location.pathname === '/dashboard' ? 'Dashboard' : ''}</h1>
+        <header className="h-16 border-b border-border bg-card px-6 flex items-center justify-between">
+          <div className="flex items-center">
+            <h1 className="text-xl font-semibold text-foreground">
+              {location.pathname === '/dashboard' ? 'Dashboard' : ''}
+            </h1>
           </div>
-          <div className="header-right">
-            <div className="user-menu">
-              <div className="user-info">
-                <div className="user-name">{account?.name || account?.username}</div>
-                <div className="user-email">{account?.username}</div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <div className="text-sm font-medium text-foreground">
+                  {account?.name || account?.username}
+                </div>
+                <div className="text-xs text-muted-foreground">{account?.username}</div>
               </div>
-              <button onClick={handleLogout} className="btn-logout">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleLogout}
+                className="gap-2"
+              >
+                <LogOut className="h-4 w-4" />
                 Cerrar Sesión
-              </button>
+              </Button>
             </div>
           </div>
         </header>
 
         {/* Content */}
-        <div className="dashboard-content">
+        <div className="flex-1 overflow-y-auto">
           {children}
         </div>
       </main>

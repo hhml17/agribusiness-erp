@@ -1,14 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ordenCompraService } from '../../services/api';
-import { Alert, type AlertType } from '../../components';
 import type { OrdenCompra } from '../../types/ordenCompra';
+import { Button } from '../../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
+import { Alert, AlertDescription, AlertTitle } from '../../components/ui/alert';
+import { Badge } from '../../components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Eye, Pencil, CheckCircle, XCircle, Plus, AlertCircle } from 'lucide-react';
 
 export function OrdenCompraPage() {
   const navigate = useNavigate();
   const [ordenes, setOrdenes] = useState<OrdenCompra[]>([]);
   const [loading, setLoading] = useState(true);
-  const [alert, setAlert] = useState<{ type: AlertType; message: string } | null>(null);
+  const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [estadoFiltro, setEstadoFiltro] = useState<string>('');
 
   useEffect(() => {
@@ -20,11 +26,10 @@ export function OrdenCompraPage() {
       setLoading(true);
       const filters = estadoFiltro ? { estado: estadoFiltro as any } : undefined;
       const data = await ordenCompraService.getAll(filters);
-      // Asegurar que data es un array
       setOrdenes(Array.isArray(data) ? data : []);
     } catch (error: any) {
       console.error('Error loading órdenes:', error);
-      setOrdenes([]); // Set empty array on error
+      setOrdenes([]);
       setAlert({
         type: 'error',
         message: 'Error al cargar órdenes de compra. Por favor intente nuevamente.'
@@ -91,166 +96,159 @@ export function OrdenCompraPage() {
     return new Date(dateString).toLocaleDateString('es-PY');
   };
 
-  const getEstadoBadgeClass = (estado: string) => {
+  const getEstadoBadgeVariant = (estado: string): 'draft' | 'approved' | 'partial' | 'completed' | 'cancelled' | 'default' => {
     switch (estado) {
-      case 'BORRADOR':
-        return 'badge-draft';
-      case 'APROBADA':
-        return 'badge-approved';
-      case 'PARCIAL':
-        return 'badge-partial';
-      case 'COMPLETADA':
-        return 'badge-completed';
-      case 'ANULADA':
-        return 'badge-cancelled';
-      default:
-        return '';
+      case 'BORRADOR': return 'draft';
+      case 'APROBADA': return 'approved';
+      case 'PARCIAL': return 'partial';
+      case 'COMPLETADA': return 'completed';
+      case 'ANULADA': return 'cancelled';
+      default: return 'default';
     }
   };
 
-  if (loading) {
-    return <div className="loading">Cargando...</div>;
-  }
-
   return (
-    <div className="orden-compra-page">
+    <div className="p-8 space-y-6">
       {alert && (
-        <Alert
-          type={alert.type}
-          message={alert.message}
-          onClose={() => setAlert(null)}
-        />
+        <Alert variant={alert.type === 'error' ? 'destructive' : 'default'} className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>{alert.type === 'error' ? 'Error' : 'Éxito'}</AlertTitle>
+          <AlertDescription>{alert.message}</AlertDescription>
+        </Alert>
       )}
 
-      <div className="page-header">
-        <h1>Órdenes de Compra</h1>
-        <div className="header-actions">
-          <select
-            value={estadoFiltro}
-            onChange={(e) => setEstadoFiltro(e.target.value)}
-            className="filter-select"
-          >
-            <option value="">Todos los estados</option>
-            <option value="BORRADOR">Borrador</option>
-            <option value="APROBADA">Aprobada</option>
-            <option value="PARCIAL">Parcial</option>
-            <option value="COMPLETADA">Completada</option>
-            <option value="ANULADA">Anulada</option>
-          </select>
-          <button
-            className="btn-primary"
-            onClick={() => navigate('/compras/ordenes/nueva')}
-          >
-            + Nueva Orden de Compra
-          </button>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Órdenes de Compra</h1>
+          <p className="text-muted-foreground mt-1">Gestión de órdenes de compra DNIT</p>
         </div>
       </div>
 
-      <div className="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Número</th>
-              <th>Fecha</th>
-              <th>Proveedor</th>
-              <th>Estado</th>
-              <th style={{ textAlign: 'right' }}>Gravado 10%</th>
-              <th style={{ textAlign: 'right' }}>IVA 10%</th>
-              <th style={{ textAlign: 'right' }}>Gravado 5%</th>
-              <th style={{ textAlign: 'right' }}>IVA 5%</th>
-              <th style={{ textAlign: 'right' }}>Exentas</th>
-              <th style={{ textAlign: 'right' }}>Total</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ordenes.length === 0 ? (
-              <tr>
-                <td colSpan={11} className="no-data">
-                  No hay órdenes de compra registradas
-                </td>
-              </tr>
-            ) : (
-              ordenes.map((orden) => (
-                <tr
-                  key={orden.id}
-                  className={orden.estado === 'ANULADA' ? 'cancelled-row' : ''}
-                >
-                  <td>
-                    <button
-                      className="link-button"
-                      onClick={() => navigate(`/compras/ordenes/${orden.id}`)}
-                    >
-                      {orden.numero}
-                    </button>
-                  </td>
-                  <td>{formatDate(orden.fecha)}</td>
-                  <td>{orden.proveedorNombre}</td>
-                  <td>
-                    <span className={`badge ${getEstadoBadgeClass(orden.estado)}`}>
-                      {orden.estado}
-                    </span>
-                  </td>
-                  <td style={{ textAlign: 'right' }}>
-                    {formatCurrency(orden.gravado10)}
-                  </td>
-                  <td style={{ textAlign: 'right' }}>
-                    {formatCurrency(orden.iva10)}
-                  </td>
-                  <td style={{ textAlign: 'right' }}>
-                    {formatCurrency(orden.gravado5)}
-                  </td>
-                  <td style={{ textAlign: 'right' }}>
-                    {formatCurrency(orden.iva5)}
-                  </td>
-                  <td style={{ textAlign: 'right' }}>
-                    {formatCurrency(orden.exentas)}
-                  </td>
-                  <td style={{ textAlign: 'right', fontWeight: 'bold' }}>
-                    {formatCurrency(orden.totalOrden)}
-                  </td>
-                  <td className="actions">
-                    {orden.estado === 'BORRADOR' && (
-                      <>
-                        <button
-                          className="btn-edit"
-                          onClick={() => navigate(`/compras/ordenes/${orden.id}/editar`)}
-                          title="Editar"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          className="btn-success"
-                          onClick={() => handleAprobar(orden.id)}
-                          title="Aprobar"
-                        >
-                          ✅
-                        </button>
-                        <button
-                          className="btn-delete"
-                          onClick={() => handleAnular(orden.id)}
-                          title="Anular"
-                        >
-                          ❌
-                        </button>
-                      </>
-                    )}
-                    {orden.estado === 'APROBADA' && (
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <CardTitle className="text-xl font-semibold">Listado de Órdenes</CardTitle>
+          <div className="flex gap-2 items-center">
+            <Select value={estadoFiltro} onValueChange={setEstadoFiltro}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Todos los estados" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Todos los estados</SelectItem>
+                <SelectItem value="BORRADOR">Borrador</SelectItem>
+                <SelectItem value="APROBADA">Aprobada</SelectItem>
+                <SelectItem value="PARCIAL">Parcial</SelectItem>
+                <SelectItem value="COMPLETADA">Completada</SelectItem>
+                <SelectItem value="ANULADA">Anulada</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button onClick={() => navigate('/compras/ordenes/nueva')} size="sm">
+              <Plus className="mr-2 h-4 w-4" />
+              Nueva Orden
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="text-center py-8 text-muted-foreground">Cargando...</div>
+          ) : ordenes.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No hay órdenes de compra registradas
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Número</TableHead>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>Proveedor</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead className="text-right">Gravado 10%</TableHead>
+                  <TableHead className="text-right">IVA 10%</TableHead>
+                  <TableHead className="text-right">Gravado 5%</TableHead>
+                  <TableHead className="text-right">IVA 5%</TableHead>
+                  <TableHead className="text-right">Exentas</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
+                  <TableHead>Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {ordenes.map((orden) => (
+                  <TableRow
+                    key={orden.id}
+                    className={orden.estado === 'ANULADA' ? 'opacity-60 line-through' : ''}
+                  >
+                    <TableCell>
                       <button
-                        className="btn-info"
+                        className="text-primary hover:underline font-medium"
                         onClick={() => navigate(`/compras/ordenes/${orden.id}`)}
-                        title="Ver Detalle"
                       >
-                        👁️
+                        {orden.numero}
                       </button>
-                    )}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+                    </TableCell>
+                    <TableCell>{formatDate(orden.fecha)}</TableCell>
+                    <TableCell>{orden.proveedorNombre}</TableCell>
+                    <TableCell>
+                      <Badge variant={getEstadoBadgeVariant(orden.estado)}>
+                        {orden.estado}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">{formatCurrency(orden.gravado10)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(orden.iva10)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(orden.gravado5)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(orden.iva5)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(orden.exentas)}</TableCell>
+                    <TableCell className="text-right font-bold">{formatCurrency(orden.totalOrden)}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        {orden.estado === 'BORRADOR' && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => navigate(`/compras/ordenes/${orden.id}/editar`)}
+                              title="Editar"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleAprobar(orden.id)}
+                              title="Aprobar"
+                              className="text-green-600 hover:text-green-700"
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleAnular(orden.id)}
+                              title="Anular"
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <XCircle className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
+                        {orden.estado === 'APROBADA' && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => navigate(`/compras/ordenes/${orden.id}`)}
+                            title="Ver Detalle"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
