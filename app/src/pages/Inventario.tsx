@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Table, Button, Modal, Card, type Column } from '../components';
-import { productosService, type Producto, type CreateProductoInput } from '../services/api';
+import { productoService, type Producto, type CreateProductoInput } from '../services/api';
 
 export function Inventario() {
   const [productos, setProductos] = useState<Producto[]>([]);
@@ -30,8 +30,8 @@ export function Inventario() {
     try {
       setLoading(true);
       const data = showBajoStock
-        ? await productosService.getBajoStock()
-        : await productosService.getAll({ activo: true });
+        ? await productoService.getBajoStock()
+        : await productoService.getAll({ activo: true });
       setProductos(data);
     } catch (error) {
       console.error('Error loading productos:', error);
@@ -44,9 +44,9 @@ export function Inventario() {
     e.preventDefault();
     try {
       if (selectedProducto) {
-        await productosService.update(selectedProducto.id, formData);
+        await productoService.update(selectedProducto.id, formData);
       } else {
-        await productosService.create(formData);
+        await productoService.create(formData);
       }
       setShowModal(false);
       resetForm();
@@ -75,7 +75,7 @@ export function Inventario() {
   const handleDelete = async (id: string) => {
     if (confirm('¿Está seguro de desactivar este producto?')) {
       try {
-        await productosService.delete(id);
+        await productoService.delete(id);
         loadProductos();
       } catch (error) {
         console.error('Error deleting producto:', error);

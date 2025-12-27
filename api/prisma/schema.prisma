@@ -96,19 +96,66 @@ model Usuario {
 // ==========================================
 
 model Producto {
-  id           String   @id @default(uuid())
-  codigo       String
-  nombre       String
-  descripcion  String?
-  categoria    String?
-  unidadMedida String // kg, litros, unidades, etc.
-  precioCompra Float
-  precioVenta  Float
-  stock        Float    @default(0)
+  id          String  @id @default(uuid())
+  codigo      String
+  nombre      String
+  descripcion String?
+  categoria   String?
+
+  // LEGACY: Mantener por compatibilidad (deprecated)
+  unidadMedida String? // DEPRECATED: usar unidadCompra
+  precioCompra Float? // DEPRECATED: usar costo en movimientos
+  precioVenta  Float? // DEPRECATED: usar precio en movimientos
+  stock        Float   @default(0)
   stockMinimo  Float?
-  activo       Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+
+  // ==========================================
+  // CAMPOS DNIT - Datos Financieros
+  // ==========================================
+  tasaIva Float @default(10.0) // 10.0, 5.0, 0.0 (Exenta)
+
+  // Cuenta IVA Crédito Fiscal
+  cuentaIvaId String?
+  cuentaIva   PlanCuentas? @relation("ProductoIVA", fields: [cuentaIvaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  // ==========================================
+  // CAMPOS DNIT - Tipo de Artículo
+  // ==========================================
+  tipoArticulo String @default("INSUMO") // INSUMO, ACTIVO_FIJO, ANIMAL, GASTO_DIRECTO, SERVICIO
+
+  // ==========================================
+  // CAMPOS DNIT - Doble Unidad de Medida
+  // ==========================================
+  unidadCompra     String // GLOBAL, TON, M3, UNIDAD, KG, L (para facturación/compra)
+  unidadControl    String? // L, KG, CABEZA, UNIDAD (para stock/operaciones)
+  factorConversion Float? // Factor de conversión: 1 TON = 1000 KG
+
+  // ==========================================
+  // CAMPOS DNIT - Control de Inventario
+  // ==========================================
+  controlaStock   Boolean @default(false)
+  metodoValuacion String? // PROMEDIO, FIFO, IDENTIFICADO (para ganado)
+
+  // ==========================================
+  // CAMPOS DNIT - Datos para Ganadería
+  // ==========================================
+  esAnimal      Boolean @default(false)
+  especieAnimal String? // BOVINO, EQUINO, OVINO, PORCINO
+
+  // ==========================================
+  // CAMPOS DNIT - Datos para Agricultura
+  // ==========================================
+  esInsumoAgricola  Boolean @default(false)
+  categoriaAgricola String? // SEMILLA, FERTILIZANTE, AGROQUIMICO, HERBICIDA
+
+  // ==========================================
+  // Estado y Auditoría
+  // ==========================================
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String? // Email del usuario que creó
+  updatedBy String? // Email del usuario que actualizó
 
   // Multi-tenant
   tenantId String
@@ -125,13 +172,17 @@ model Producto {
   cuentaIngreso   PlanCuentas? @relation("ProductoIngreso", fields: [cuentaIngresoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   // Relations
-  ventaItems       VentaItem[]
-  compraItems      CompraItem[]
-  itemsOrdenCompra ItemOrdenCompra[]
+  ventaItems            VentaItem[]
+  compraItems           CompraItem[]
+  itemsOrdenCompra      ItemOrdenCompra[]
+  facturasCompraDetalle FacturaCompraDetalle[]
 
   @@unique([tenantId, codigo])
   @@index([tenantId])
-  @@index([categoria])
+  @@index([tenantId, tipoArticulo])
+  @@index([tenantId, categoria])
+  @@index([tenantId, esAnimal])
+  @@index([tenantId, esInsumoAgricola])
   @@map("productos")
 }
 
@@ -412,12 +463,14 @@ model PlanCuentas {
   updatedAt        DateTime @updatedAt
 
   // Relations
-  lineasAsiento           LineaAsiento[]
-  cuentasBancarias        CuentaBancaria[]
-  actorCuentas            ActorCuentaContable[]  @relation("ActorCuentas")
-  productosInventario     Producto[]             @relation("ProductoInventario")
-  productosCosto          Producto[]             @relation("ProductoCosto")
-  productosIngreso        Producto[]             @relation("ProductoIngreso")
+  lineasAsiento         LineaAsiento[]
+  cuentasBancarias      CuentaBancaria[]
+  actorCuentas          ActorCuentaContable[]  @relation("ActorCuentas")
+  productosInventario   Producto[]             @relation("ProductoInventario")
+  productosCosto        Producto[]             @relation("ProductoCosto")
+  productosIngreso      Producto[]             @relation("ProductoIngreso")
+  productosIVA          Producto[]             @relation("ProductoIVA")
+  facturasCompraDetalle FacturaCompraDetalle[] @relation("FacturaCompraCuenta")
 
   @@unique([tenantId, codigo])
   @@index([tenantId, tipo])
@@ -439,9 +492,11 @@ model CentroCosto {
   updatedAt   DateTime @updatedAt
 
   // Relations
-  cuentas            PlanCuentas[]
-  lineasAsiento      LineaAsiento[]
-  estanciasMejoradas EstanciaMejorada[]
+  cuentas               PlanCuentas[]
+  lineasAsiento         LineaAsiento[]
+  estanciasMejoradas    EstanciaMejorada[]
+  itemsOrdenCompra      ItemOrdenCompra[]      @relation("ItemOrdenCompraCentroCosto")
+  facturasCompraDetalle FacturaCompraDetalle[] @relation("FacturaCompraCentroCosto")
 
   @@unique([tenantId, codigo])
   @@map("centros_costo")
@@ -477,8 +532,9 @@ model AsientoContable {
   updatedAt DateTime @updatedAt
 
   // Relations
-  lineas    LineaAsiento[]
-  ordenPago OrdenPago?
+  lineas        LineaAsiento[]
+  ordenPago     OrdenPago?
+  facturaCompra FacturaCompra? @relation("FacturaCompraAsiento")
 
   @@unique([tenantId, numero])
   @@index([tenantId, fecha])
@@ -644,6 +700,8 @@ model ItemOrdenCompra {
   ordenCompraId String
   ordenCompra   OrdenCompra @relation(fields: [ordenCompraId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
+  lineaNumero Int // Número de línea en la orden
+
   descripcion    String
   cantidad       Float
   unidadMedida   String
@@ -653,9 +711,30 @@ model ItemOrdenCompra {
   productoId String?
   producto   Producto? @relation(fields: [productoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
+  // ==========================================
+  // CAMPOS DNIT - Centro de Costo
+  // ==========================================
+  centroCostoId String // CRÍTICO: vincular cada ítem a su centro de costo
+  centroCosto   CentroCosto @relation("ItemOrdenCompraCentroCosto", fields: [centroCostoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  // ==========================================
+  // CAMPOS DNIT - IVA
+  // ==========================================
+  tasaIva  Float // Tasa de IVA del producto en el momento de la orden
+  montoIva Float // Monto calculado de IVA
+  total    Float // Subtotal + IVA
+
+  // ==========================================
+  // CAMPOS DNIT - Para inventario futuro
+  // ==========================================
+  cantidadControl Float? // Cantidad convertida a unidad de control
+  unidadControl   String? // Unidad de control del producto
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([ordenCompraId, lineaNumero])
+  @@index([centroCostoId])
   @@map("items_orden_compra")
 }
 
@@ -665,48 +744,167 @@ model FacturaCompra {
   tenantId String
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  // Identificación
-  numero           String // Número de factura del proveedor
-  timbrado         String? // Timbrado de la factura
-  fecha            DateTime
+  // ==========================================
+  // NUMERACIÓN DNIT PARAGUAY
+  // ==========================================
+  timbrado        String // Timbrado SET
+  establecimiento String // "001"
+  puntoExpedicion String // "002"
+  numero          String // "0003456"
+  numeroCompleto  String // "001-002-0003456" (generado automáticamente)
+
+  // ==========================================
+  // FECHAS
+  // ==========================================
+  fechaEmision     DateTime
+  fechaRecepcion   DateTime
   fechaVencimiento DateTime?
 
-  // Proveedor
-  proveedorId String
-  proveedor   Proveedor @relation(fields: [proveedorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  // ==========================================
+  // PROVEEDOR
+  // ==========================================
+  proveedorId          String
+  proveedor            Proveedor @relation(fields: [proveedorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  proveedorRuc         String
+  proveedorRazonSocial String
 
-  // Tipo de factura
-  tipo String // NORMAL, ANTICIPO, GASTO_NO_DEDUCIBLE, CAJA_CHICA
-
-  // Vinculación con OC (opcional)
+  // ==========================================
+  // VINCULACIÓN CON OC (opcional)
+  // ==========================================
   ordenCompraId String?
   ordenCompra   OrdenCompra? @relation(fields: [ordenCompraId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  // Importes
-  subtotal Float
-  iva10    Float @default(0)
-  iva5     Float @default(0)
-  exentas  Float @default(0)
-  total    Float
+  // ==========================================
+  // TIPO DE FACTURA
+  // ==========================================
+  tipo String @default("NORMAL") // NORMAL, ANTICIPO, GASTO_NO_DEDUCIBLE, CAJA_CHICA
 
-  // Estado
-  estado         String // PENDIENTE, APROBADA, RECHAZADA, PAGADA_PARCIAL, PAGADA_TOTAL, ANULADA
+  // ==========================================
+  // TOTALES DNIT (segregados por tasa)
+  // ==========================================
+  gravado10    Float @default(0) // Base imponible 10%
+  iva10        Float @default(0) // IVA 10%
+  gravado5     Float @default(0) // Base imponible 5%
+  iva5         Float @default(0) // IVA 5%
+  exentas      Float @default(0) // Operaciones exentas
+  totalFactura Float // Total general
+
+  // ==========================================
+  // MONEDA
+  // ==========================================
+  moneda     String @default("PYG") // PYG, USD
+  tipoCambio Float  @default(1)
+
+  // ==========================================
+  // ESTADO Y WORKFLOW
+  // ==========================================
+  estado         String @default("PENDIENTE") // PENDIENTE, VALIDADA, CONTABILIZADA, ANULADA
   saldoPendiente Float // Total - pagos realizados
 
+  // ==========================================
+  // CONTABILIZACIÓN
+  // ==========================================
+  asientoId            String?          @unique
+  asiento              AsientoContable? @relation("FacturaCompraAsiento", fields: [asientoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  fechaContabilizacion DateTime?
+
+  // ==========================================
+  // DATOS ADICIONALES
+  // ==========================================
   descripcion   String?
   observaciones String?
 
-  // Auditoría
+  // ==========================================
+  // AUDITORÍA
+  // ==========================================
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdBy   String?
+  validatedBy String?
+  validatedAt DateTime?
+
+  // ==========================================
+  // RELATIONS
+  // ==========================================
+  detalles    FacturaCompraDetalle[]
+  ordenesPago OrdenPago[]
+
+  @@unique([tenantId, timbrado, numeroCompleto])
+  @@index([tenantId, estado])
+  @@index([proveedorId])
+  @@index([fechaEmision])
+  @@map("facturas_compra")
+}
+
+// DETALLE DE FACTURAS DE COMPRA (NUEVO MODELO DNIT)
+model FacturaCompraDetalle {
+  id        String        @id @default(uuid())
+  facturaId String
+  factura   FacturaCompra @relation(fields: [facturaId], references: [id], onDelete: Cascade)
+
+  lineaNumero Int // Número de línea en la factura
+
+  // ==========================================
+  // ARTÍCULO/PRODUCTO
+  // ==========================================
+  articuloId  String?
+  articulo    Producto? @relation(fields: [articuloId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  descripcion String
+
+  // ==========================================
+  // CANTIDADES (en unidad de compra)
+  // ==========================================
+  cantidad     Float
+  unidadMedida String
+
+  // ==========================================
+  // PRECIOS (en unidad de compra)
+  // ==========================================
+  precioUnitario Float
+  subtotal       Float
+
+  // ==========================================
+  // IVA DNIT
+  // ==========================================
+  tasaIva  Float // 10.0, 5.0, 0.0
+  montoIva Float
+  total    Float
+
+  // ==========================================
+  // CENTRO DE COSTO (CRÍTICO)
+  // ==========================================
+  centroCostoId String
+  centroCosto   CentroCosto @relation("FacturaCompraCentroCosto", fields: [centroCostoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  // ==========================================
+  // CUENTA CONTABLE
+  // ==========================================
+  cuentaContableId String
+  cuentaContable   PlanCuentas @relation("FacturaCompraCuenta", fields: [cuentaContableId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  // ==========================================
+  // RELACIÓN CON ORDEN DE COMPRA
+  // ==========================================
+  ordenCompraDetalleId String?
+
+  // ==========================================
+  // CANTIDADES DE CONTROL (para inventario futuro)
+  // ==========================================
+  cantidadControl  Float?
+  unidadControl    String?
+  pendienteIngreso Boolean @default(true) // Para controlar ingreso a stock
+
+  // ==========================================
+  // AUDITORÍA
+  // ==========================================
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relations
-  ordenesPago OrdenPago[]
-
-  @@unique([tenantId, numero, timbrado])
-  @@index([tenantId, estado])
-  @@index([proveedorId])
-  @@map("facturas_compra")
+  @@unique([facturaId, lineaNumero])
+  @@index([articuloId])
+  @@index([centroCostoId])
+  @@index([cuentaContableId])
+  @@map("facturas_compra_detalle")
 }
 
 // ORDENES DE PAGO

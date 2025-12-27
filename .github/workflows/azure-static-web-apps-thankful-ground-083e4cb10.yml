@@ -35,12 +35,11 @@ jobs:
           output_location: "dist"
         env:
           # Environment variables for production build
-          VITE_API_URL: ${{ secrets.VITE_API_URL_PROD }}
-          VITE_TENANT_ID: ${{ secrets.VITE_TENANT_ID }}
-          VITE_AZURE_CLIENT_ID: ${{ secrets.VITE_AZURE_CLIENT_ID }}
-          VITE_AZURE_TENANT_ID: ${{ secrets.VITE_AZURE_TENANT_ID }}
-          VITE_REDIRECT_URI: https://erp.agribusiness.com.py
-          VITE_DEV_MODE: false
+          VITE_API_URL: https://${{ vars.VITE_API_URL_PROD }}/api
+          VITE_AZURE_CLIENT_ID: ${{ secrets.VITE_AZURE_AD_CLIENT_ID }}
+          VITE_AZURE_TENANT_ID: ${{ secrets.VITE_AZURE_AD_TENANT_ID }}
+          VITE_REDIRECT_URI: ${{ vars.VITE_REDIRECT_URI }}
+          VITE_DEV_MODE: ${{ vars.VITE_DEV_MODE }}
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'

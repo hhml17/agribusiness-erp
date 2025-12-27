@@ -3,7 +3,7 @@
  * Export all API services from a single location
  */
 
-export { productosService } from './productosService';
+export { productoService } from './productosService';
 export { clientesService } from './clientesService';
 export { proveedoresService } from './proveedoresService';
 export { ventasService } from './ventasService';
